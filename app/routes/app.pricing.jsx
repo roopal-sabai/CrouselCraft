@@ -45,8 +45,8 @@ export const action = async ({ request }) => {
     return { success: false, error: "Invalid plan" };
   }
 
-  const host = new URL(request.url).host;
-  const returnUrl = `https://${host}/app/pricing-callback?plan=${plan}&shop=${session.shop}`;
+  const shopName = session.shop.replace(".myshopify.com", "");
+  const returnUrl = `https://admin.shopify.com/store/${shopName}/apps/${process.env.SHOPIFY_API_KEY}/app/pricing-callback?plan=${plan}`;
 
   throw await billing.request({
     plan: planName,
