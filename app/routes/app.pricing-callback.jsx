@@ -1,9 +1,8 @@
-import { redirect } from "react-router";
 import { authenticate } from "../shopify.server";
 import prisma from "../db.server";
 
 export const loader = async ({ request }) => {
-  const { session, billing } = await authenticate.admin(request);
+  const { session, billing, redirect } = await authenticate.admin(request);
   const url = new URL(request.url);
   const plan = url.searchParams.get("plan");
 
@@ -26,6 +25,6 @@ export const loader = async ({ request }) => {
     });
   }
 
-  // Redirect the merchant back to the dashboard templates page
+  // Redirect the merchant back to the dashboard templates page using App Bridge redirect
   return redirect("/app");
 };
