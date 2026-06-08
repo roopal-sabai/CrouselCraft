@@ -1,0 +1,81 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// Note that some adapters may set a maximum length for the String type by default, please ensure your strings are long
+// enough when changing adapters.
+// See https://www.prisma.io/docs/orm/reference/prisma-schema-reference#string for more information
+datasource db {
+  provider = "sqlite"
+  url      = "file:dev.sqlite"
+}
+
+model Session {
+  id            String    @id
+  shop          String
+  state         String
+  isOnline      Boolean   @default(false)
+  scope         String?
+  expires       DateTime?
+  accessToken   String
+  userId        BigInt?
+  firstName     String?
+  lastName      String?
+  email         String?
+  accountOwner  Boolean   @default(false)
+  locale        String?
+  collaborator  Boolean?  @default(false)
+  emailVerified Boolean?  @default(false)
+  refreshToken        String?
+  refreshTokenExpires DateTime?
+}
+
+model Shop {
+  id               String   @id @default(cuid())
+  shop             String   @unique
+  subscriptionPlan String   @default("free") // free, pro, premium
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  carousels        Carousel[]
+}
+
+model Carousel {
+  id               String   @id @default(cuid())
+  shopId           String
+  shop             Shop     @relation(fields: [shopId], references: [shop])
+  name             String
+  isActive         Boolean  @default(false)
+  design           Int      @default(1) // 1-6
+  
+  // Settings as JSON for flexibility
+  appearance       String   @default("{}")
+  layout           String   @default("{}")
+  navigation       String   @default("{}")
+  responsive       String   @default("{}")
+
+  slides           Slide[]
+
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
+
+model Slide {
+  id               String   @id @default(cuid())
+  carouselId       String
+  carousel         Carousel @relation(fields: [carouselId], references: [id], onDelete: Cascade)
+  order            Int      @default(0)
+  
+  // Content
+  imageUrl         String?
+  videoUrl         String?
+  title            String?
+  description      String?
+  buttonText       String?
+  linkUrl          String?
+
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
