@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useLoaderData, useSubmit, useNavigate } from "react-router";
 import { boundary } from "@shopify/shopify-app-react-router/server";
-import { authenticate } from "../shopify.server";
+import { authenticate, PLAN_PRO_MONTHLY, PLAN_PRO_ANNUAL, PLAN_ELITE_MONTHLY, PLAN_ELITE_ANNUAL } from "../shopify.server";
 import prisma from "../db.server";
 import { Check, Zap, Crown, Star, Sparkles, HelpCircle, ArrowLeft } from "lucide-react";
 
@@ -23,18 +23,36 @@ export const loader = async ({ request }) => {
 };
 
 export const action = async ({ request }) => {
-  const { session } = await authenticate.admin(request);
+  const { billing, session } = await authenticate.admin(request);
   const formData = await request.formData();
   const plan = formData.get("plan");
+  const isAnnual = formData.get("interval") === "annual";
 
-  if (["free", "pro", "premium"].includes(plan)) {
+  if (plan === "free") {
     await prisma.shop.update({
       where: { shop: session.shop },
-      data: { subscriptionPlan: plan },
+      data: { subscriptionPlan: "free" },
     });
+    return { success: true, plan: "free" };
   }
 
-  return { success: true, plan };
+  let planName = "";
+  if (plan === "pro") {
+    planName = isAnnual ? PLAN_PRO_ANNUAL : PLAN_PRO_MONTHLY;
+  } else if (plan === "premium") {
+    planName = isAnnual ? PLAN_ELITE_ANNUAL : PLAN_ELITE_MONTHLY;
+  } else {
+    return { success: false, error: "Invalid plan" };
+  }
+
+  const host = new URL(request.url).host;
+  const returnUrl = `https://${host}/app/pricing-callback?plan=${plan}&shop=${session.shop}`;
+
+  throw await billing.request({
+    plan: planName,
+    isTest: true,
+    returnUrl,
+  });
 };
 
 export default function Pricing() {
@@ -46,6 +64,7 @@ export default function Pricing() {
   const handleSubscribe = (planId) => {
     const formData = new FormData();
     formData.append("plan", planId);
+    formData.append("interval", billingInterval);
     submit(formData, { method: "POST" });
   };
 
