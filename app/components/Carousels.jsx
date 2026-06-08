@@ -5,6 +5,20 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 // ─────────────────────────────────────────────
 // EMPTY STATE
 // ─────────────────────────────────────────────
+function handleLinkClick(e, linkUrl, shopDomain) {
+  e.preventDefault();
+  if (!linkUrl || linkUrl === "#") return;
+  let target = linkUrl;
+  if (linkUrl.startsWith("/")) {
+    if (shopDomain) {
+      target = `https://${shopDomain}${linkUrl}`;
+    } else {
+      target = `https://myshopify.com${linkUrl}`;
+    }
+  }
+  window.open(target, "_blank", "noopener,noreferrer");
+}
+
 function EmptyState() {
   return (
     <div className="w-full h-64 border-2 border-dashed border-gray-200 rounded-2xl flex flex-col items-center justify-center text-gray-400 bg-gray-50">
@@ -18,7 +32,7 @@ function EmptyState() {
 // DESIGN 1 — CLASSIC SLIDER
 // Clean, minimal white cards. The free baseline.
 // ─────────────────────────────────────────────
-export function ClassicSlider({ slides, appearance, layout, navigation }) {
+export function ClassicSlider({ slides, appearance, layout, navigation, shopDomain }) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const visibleCards = layout?.visibleCards || 3;
   const gap = layout?.gap || 24;
@@ -42,7 +56,7 @@ export function ClassicSlider({ slides, appearance, layout, navigation }) {
     <div className="relative w-full py-4">
       <div className="overflow-hidden w-full">
         <motion.div
-          className="flex"
+          className="flex items-stretch"
           style={{ gap: `${gap}px` }}
           animate={{
             x: `calc(-${currentIndex * (100 / visibleCards)}% - ${currentIndex * (gap / visibleCards)}px)`,
@@ -52,17 +66,17 @@ export function ClassicSlider({ slides, appearance, layout, navigation }) {
           {slides.map((slide) => (
             <div
               key={slide.id}
-              className="flex-shrink-0"
+              className="flex-shrink-0 h-auto"
               style={{
                 width: `calc(${100 / visibleCards}% - ${((visibleCards - 1) * gap) / visibleCards}px)`,
               }}
             >
               {/* Classic card: white, clean, vertical stack */}
               <div
-                className="bg-white border border-gray-100 overflow-hidden h-[420px] flex flex-col group shadow-md hover:shadow-xl transition-shadow duration-300"
+                className="bg-white border border-gray-100 overflow-hidden h-full flex flex-col group shadow-md hover:shadow-xl transition-shadow duration-300"
                 style={{ borderRadius: `${borderRadius}px` }}
               >
-                <div className="relative h-[58%] overflow-hidden bg-gray-100 flex-shrink-0">
+                <div className="relative aspect-[4/5] w-full overflow-hidden bg-gray-100 flex-shrink-0">
                   {slide.imageUrl ? (
                     <img
                       src={slide.imageUrl}
@@ -84,6 +98,7 @@ export function ClassicSlider({ slides, appearance, layout, navigation }) {
                   {slide.buttonText && (
                     <a
                       href={slide.linkUrl || "#"}
+                      onClick={(e) => handleLinkClick(e, slide.linkUrl, shopDomain)}
                       className="mt-3 block text-center bg-gray-900 text-white text-sm font-semibold py-2.5 rounded-lg hover:bg-black transition-colors"
                     >
                       {slide.buttonText}
@@ -143,7 +158,7 @@ const FLOATING_ACCENTS = [
   "from-emerald-400 to-green-500",
 ];
 
-export function FloatingCards({ slides, appearance, layout, navigation }) {
+export function FloatingCards({ slides, appearance, layout, navigation, shopDomain }) {
   const visibleCards = layout?.visibleCards || 3;
   const gap = layout?.gap || 28;
   const borderRadius = appearance?.borderRadius || 20;
@@ -155,7 +170,7 @@ export function FloatingCards({ slides, appearance, layout, navigation }) {
   return (
     <div className="relative w-full py-10">
       <div
-        className="flex justify-center items-center w-full overflow-x-auto scrollbar-none px-4"
+        className="flex justify-center items-stretch w-full overflow-x-auto scrollbar-none px-4 py-2"
         style={{ gap: `${gap}px` }}
       >
         {slides.map((slide, idx) => {
@@ -174,11 +189,11 @@ export function FloatingCards({ slides, appearance, layout, navigation }) {
               style={{
                 width: `calc(${100 / visibleCards}% - ${((visibleCards - 1) * gap) / visibleCards}px)`,
               }}
-              className="flex-shrink-0"
+              className="flex-shrink-0 h-auto"
             >
               {/* Floating card: gradient accent bar, colored shadow on hover */}
               <div
-                className="bg-white overflow-hidden h-[460px] flex flex-col"
+                className="bg-white overflow-hidden h-full flex flex-col"
                 style={{
                   borderRadius: `${borderRadius}px`,
                   boxShadow: "0 8px 32px -8px rgba(0,0,0,0.12)",
@@ -186,7 +201,7 @@ export function FloatingCards({ slides, appearance, layout, navigation }) {
               >
                 {/* Gradient accent top bar */}
                 <div className={`h-1.5 w-full bg-gradient-to-r ${accent} flex-shrink-0`} />
-                <div className="relative flex-shrink-0 overflow-hidden bg-gray-50" style={{ height: "52%" }}>
+                <div className="relative flex-shrink-0 overflow-hidden bg-gray-50 aspect-[4/5] w-full">
                   {slide.imageUrl ? (
                     <img
                       src={slide.imageUrl}
@@ -209,6 +224,7 @@ export function FloatingCards({ slides, appearance, layout, navigation }) {
                   {slide.buttonText && (
                     <a
                       href={slide.linkUrl || "#"}
+                      onClick={(e) => handleLinkClick(e, slide.linkUrl, shopDomain)}
                       className={`mt-3 block text-center text-white text-sm font-semibold py-2.5 rounded-xl bg-gradient-to-r ${accent} hover:opacity-90 transition-opacity`}
                     >
                       {slide.buttonText}
@@ -228,7 +244,7 @@ export function FloatingCards({ slides, appearance, layout, navigation }) {
 // DESIGN 3 — COVERFLOW 3D ($49)
 // Dark stage, real CSS perspective, mirror reflection.
 // ─────────────────────────────────────────────
-export function CoverflowSlider({ slides, appearance, layout, navigation }) {
+export function CoverflowSlider({ slides, appearance, layout, navigation, shopDomain }) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const rotationAngle = layout?.rotationAngle ?? 42;
   const centerScale = layout?.centerScale ?? 1.12;
@@ -312,6 +328,7 @@ export function CoverflowSlider({ slides, appearance, layout, navigation }) {
                     {slide.buttonText && (
                       <a
                         href={slide.linkUrl || "#"}
+                        onClick={(e) => handleLinkClick(e, slide.linkUrl, shopDomain)}
                         className="mt-2 inline-block bg-white text-gray-900 text-xs font-bold px-4 py-2 rounded-lg hover:bg-gray-100 transition-colors w-fit"
                       >
                         {slide.buttonText}
@@ -378,7 +395,7 @@ export function CoverflowSlider({ slides, appearance, layout, navigation }) {
 // Layered card deck. Drag top card to cycle.
 // Portrait cards, story-format, spring physics.
 // ─────────────────────────────────────────────
-export function StackedStory({ slides, appearance, navigation, layout }) {
+export function StackedStory({ slides, appearance, navigation, layout, shopDomain }) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const stackSpread = layout?.stackSpread ?? 22;
@@ -463,6 +480,7 @@ export function StackedStory({ slides, appearance, navigation, layout }) {
                     {slide.buttonText && (
                       <a
                         href={slide.linkUrl || "#"}
+                        onClick={(e) => handleLinkClick(e, slide.linkUrl, shopDomain)}
                         className="mt-3 inline-block bg-white text-gray-900 font-bold text-sm px-5 py-2 rounded-full hover:bg-gray-100 transition-colors"
                       >
                         {slide.buttonText}
@@ -499,7 +517,7 @@ export function StackedStory({ slides, appearance, navigation, layout }) {
 // DESIGN 5 — INFINITE MARQUEE ($99)
 // Seamless continuous scroll. Fashion/brand energy.
 // ─────────────────────────────────────────────
-export function InfiniteMarquee({ slides, appearance, layout, navigation }) {
+export function InfiniteMarquee({ slides, appearance, layout, navigation, shopDomain }) {
   const marqueeDirection = navigation?.marqueeDirection ?? "left";
   const marqueeSpeed = navigation?.marqueeSpeed ?? 28; // seconds
   const pauseOnHover = navigation?.pauseOnHover ?? true;
@@ -511,7 +529,8 @@ export function InfiniteMarquee({ slides, appearance, layout, navigation }) {
 
   // Duplicate enough times for seamless loop
   const repeated = [...slides, ...slides, ...slides, ...slides];
-  const directionSign = marqueeDirection === "left" ? -1 : 1;
+  // Fix direction logic: scrolling "left" means translating negative x (right-to-left flow)
+  const directionSign = marqueeDirection === "left" ? 1 : -1;
 
   return (
     <div className="relative w-full overflow-hidden py-8" style={{ userSelect: "none" }}>
@@ -530,16 +549,15 @@ export function InfiniteMarquee({ slides, appearance, layout, navigation }) {
         {repeated.map((slide, idx) => (
           <div
             key={`${slide.id}-${idx}`}
-            className="flex-shrink-0 group"
+            className="flex-shrink-0 group py-2"
             style={{ width: cardWidth }}
           >
-            {/* Marquee card: tall, no padding top, title over image */}
+            {/* Marquee card: tall, hover shadow, lift interaction */}
             <div
-              className="overflow-hidden bg-gray-100 relative"
+              className="overflow-hidden bg-gray-100 relative shadow-sm hover:shadow-xl hover:-translate-y-1.5 transition-all duration-300"
               style={{
                 height: 380,
                 borderRadius: `${borderRadius}px`,
-                boxShadow: "0 4px 20px -4px rgba(0,0,0,0.10)",
               }}
             >
               {slide.imageUrl ? (
@@ -560,6 +578,7 @@ export function InfiniteMarquee({ slides, appearance, layout, navigation }) {
                 {slide.buttonText && (
                   <a
                     href={slide.linkUrl || "#"}
+                    onClick={(e) => handleLinkClick(e, slide.linkUrl, shopDomain)}
                     className="mt-2 inline-block border border-white text-white text-xs font-semibold px-4 py-1.5 rounded-full hover:bg-white hover:text-gray-900 transition-colors w-fit"
                   >
                     {slide.buttonText}
@@ -630,7 +649,7 @@ function TiltCard({ children, strength = 12, borderRadius = 24 }) {
   );
 }
 
-export function Showcase3D({ slides, appearance, navigation, layout }) {
+export function Showcase3D({ slides, appearance, navigation, layout, shopDomain }) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const layoutSide = layout?.layoutSide ?? "left";
   const tiltStrength = layout?.tiltStrength ?? 12;
@@ -678,6 +697,7 @@ export function Showcase3D({ slides, appearance, navigation, layout }) {
             {slide.buttonText && (
               <a
                 href={slide.linkUrl || "#"}
+                onClick={(e) => handleLinkClick(e, slide.linkUrl, shopDomain)}
                 className={`inline-block px-8 py-3.5 rounded-xl font-bold text-sm transition-all duration-200 ${btnClass}`}
               >
                 {slide.buttonText}

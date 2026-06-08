@@ -30,7 +30,7 @@ export const loader = async ({ request, params }) => {
     include: { slides: { orderBy: { order: "asc" } } },
   });
   if (!carousel) throw new Response("Not Found", { status: 404 });
-  return { carousel, plan: shop?.subscriptionPlan || "free" };
+  return { carousel, plan: shop?.subscriptionPlan || "free", shopDomain: session.shop };
 };
 
 // ─── Action ──────────────────────────────────
@@ -421,7 +421,7 @@ function SettingsPanel({ design, appearance, setAppearance, layout, setLayout, n
 
 // ─── Main Editor ─────────────────────────────
 export default function CarouselEditor() {
-  const { carousel, plan } = useLoaderData();
+  const { carousel, plan, shopDomain } = useLoaderData();
   const submit = useSubmit();
   const navigate = useNavigate();
 
@@ -471,7 +471,7 @@ export default function CarouselEditor() {
   };
 
   const renderPreview = () => {
-    const props = { slides: carousel.slides, appearance, layout, navigation };
+    const props = { slides: carousel.slides, appearance, layout, navigation, shopDomain };
     switch (design) {
       case 1: return <ClassicSlider {...props} />;
       case 2: return <FloatingCards {...props} />;

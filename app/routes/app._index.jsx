@@ -179,6 +179,7 @@ export const action = async ({ request }) => {
         appearance: JSON.stringify(defaults.appearance),
         layout: JSON.stringify(defaults.layout),
         navigation: JSON.stringify(defaults.navigation),
+        isActive: false,
       },
     });
 
@@ -227,6 +228,7 @@ export const action = async ({ request }) => {
           appearance: source.appearance,
           layout: source.layout,
           navigation: source.navigation,
+          isActive: false,
         },
       });
 
@@ -284,15 +286,15 @@ export const action = async ({ request }) => {
 function FAQItem({ question, answer }) {
   const [isOpen, setIsOpen] = useState(false);
   return (
-    <div className="border-b border-gray-100 py-4">
+    <div className="border-b border-white/[0.04] py-4">
       <button
         onClick={() => setIsOpen(!isOpen)}
         className="w-full flex justify-between items-center text-left py-2 focus:outline-none"
       >
-        <span className="font-semibold text-gray-900 text-lg">{question}</span>
-        <ChevronDown className={`w-5 h-5 text-gray-500 transition-transform ${isOpen ? "rotate-180" : ""}`} />
+        <span className="font-semibold text-white text-lg font-['Plus_Jakarta_Sans',_sans-serif]">{question}</span>
+        <ChevronDown className={`w-5 h-5 text-gray-400 transition-transform ${isOpen ? "rotate-180" : ""}`} />
       </button>
-      <div className={`mt-2 text-gray-600 leading-relaxed transition-all overflow-hidden ${isOpen ? "max-h-40" : "max-h-0"}`}>
+      <div className={`mt-2 text-gray-400 leading-relaxed transition-all overflow-hidden ${isOpen ? "max-h-40" : "max-h-0"}`}>
         {answer}
       </div>
     </div>
@@ -308,13 +310,6 @@ export default function Index() {
 
   const [previewingTemplate, setPreviewingTemplate] = useState(null);
   const plan = shop?.subscriptionPlan || "free";
-  
-  const isUpgrading = navigation.state === "submitting" && navigation.formData?.get("intent") === "subscribe";
-  const upgradingPlan = isUpgrading ? navigation.formData?.get("plan") : null;
-
-  useEffect(() => {
-    // Scroll action listeners if needed
-  }, []);
 
   const isLocked = (tier) => {
     if (plan === "elite" || plan === "premium") return false;
@@ -325,7 +320,7 @@ export default function Index() {
   const handleUseTemplate = (tmplId, name) => {
     const tmpl = templates.find((t) => t.id === tmplId);
     if (isLocked(tmpl.tier)) {
-      document.getElementById("pricing-section")?.scrollIntoView({ behavior: "smooth" });
+      navigate("/app/pricing");
       return;
     }
     const fd = new FormData();
@@ -339,13 +334,6 @@ export default function Index() {
     const fd = new FormData();
     fd.append("intent", intent);
     fd.append("carouselId", id);
-    submit(fd, { method: "POST" });
-  };
-
-  const handleUpgrade = (tier) => {
-    const fd = new FormData();
-    fd.append("intent", "subscribe");
-    fd.append("plan", tier);
     submit(fd, { method: "POST" });
   };
 
@@ -407,36 +395,43 @@ export default function Index() {
   ];
 
   const planBadges = {
-    free: { label: "Free", className: "bg-gray-100 text-gray-600 border border-gray-200" },
-    pro: { label: "Pro", className: "bg-violet-100 text-violet-700 border border-violet-200" },
-    elite: { label: "Elite", className: "bg-rose-100 text-rose-700 border border-rose-200" },
+    free: { label: "Free", className: "bg-white/5 text-gray-300 border border-white/10" },
+    pro: { label: "Pro", className: "bg-violet-500/10 text-violet-300 border border-violet-500/20" },
+    elite: { label: "Elite", className: "bg-rose-500/10 text-rose-300 border border-rose-500/20" },
   };
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] font-sans selection:bg-gray-900 selection:text-white pb-24 overflow-x-hidden">
+    <div className="min-h-screen bg-[#070913] text-gray-150 font-['Outfit',_sans-serif] selection:bg-white selection:text-gray-900 pb-24 overflow-x-hidden relative">
+      {/* Background Mesh Glows */}
+      <div className="absolute top-[-10%] left-[-10%] w-[45%] aspect-square rounded-full bg-violet-600/10 blur-[130px] pointer-events-none" />
+      <div className="absolute top-[20%] right-[-10%] w-[35%] aspect-square rounded-full bg-rose-600/10 blur-[130px] pointer-events-none" />
+      
+      {/* Thin grid overlay */}
+      <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff02_1px,transparent_1px),linear-gradient(to_bottom,#ffffff02_1px,transparent_1px)] bg-[size:40px_40px] pointer-events-none" />
+
       {/* ── Glass Header ── */}
-      <header className="sticky top-0 bg-white/80 backdrop-blur-md border-b border-gray-100 z-50 px-8 py-4">
+      <header className="sticky top-0 bg-[#070913]/70 backdrop-blur-md border-b border-white/[0.06] z-50 px-8 py-4">
         <div className="max-w-6xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Sparkles className="w-6 h-6 text-gray-900 animate-pulse" />
-            <span className="font-extrabold text-xl tracking-tight text-gray-900">CarouselCraft</span>
+            <Sparkles className="w-6 h-6 text-white animate-pulse" />
+            <span className="font-extrabold text-xl tracking-tight text-white font-['Plus_Jakarta_Sans',_sans-serif]">CarouselCraft</span>
             <span className={`px-2.5 py-0.5 text-[10px] uppercase font-bold tracking-widest rounded-full ${
-              plan === "elite" || plan === "premium" ? "bg-rose-500 text-white" : plan === "pro" ? "bg-violet-600 text-white" : "bg-gray-200 text-gray-700"
+              plan === "elite" || plan === "premium" ? "bg-rose-600 text-white" : plan === "pro" ? "bg-violet-600 text-white" : "bg-white/10 text-gray-300"
             }`}>
               {plan === "premium" ? "Elite" : plan} Plan
             </span>
           </div>
           <div className="flex items-center gap-6">
-            <a href="#templates" className="text-sm font-semibold text-gray-600 hover:text-gray-900 transition-colors">Templates</a>
+            <a href="#templates" className="text-sm font-semibold text-gray-400 hover:text-white transition-colors">Templates</a>
             <button
               onClick={() => navigate("/app/pricing")}
-              className="text-sm font-semibold text-gray-600 hover:text-gray-900 transition-colors"
+              className="text-sm font-semibold text-gray-400 hover:text-white transition-colors"
             >
               Subscription Plans
             </button>
             <button
               onClick={() => handleUseTemplate(1, "Classic Slider Carousel")}
-              className="bg-gray-900 hover:bg-black text-white text-sm font-bold px-4 py-2.5 rounded-xl transition-all shadow-sm flex items-center gap-1.5"
+              className="bg-white text-gray-900 hover:bg-gray-150 text-sm font-bold px-4 py-2.5 rounded-xl transition-all shadow-lg flex items-center gap-1.5"
             >
               <Plus className="w-4 h-4" /> Create Carousel
             </button>
@@ -445,30 +440,27 @@ export default function Index() {
       </header>
 
       {/* ── Hero Section ── */}
-      <section className="relative pt-16 pb-20 px-8 bg-gradient-to-b from-white to-transparent">
+      <section className="relative pt-16 pb-20 px-8 overflow-hidden">
         <div className="max-w-6xl mx-auto text-center relative z-10">
-          <span className="inline-flex items-center gap-1.5 text-xs font-bold text-gray-600 bg-gray-100 px-3 py-1 rounded-full uppercase tracking-wider mb-6">
-            <Crown className="w-3.5 h-3.5 text-amber-500" /> Awwwards-grade Shopify Carousels
-          </span>
-          <h1 className="text-5xl md:text-6xl font-black text-gray-900 tracking-tight leading-tight max-w-4xl mx-auto mb-6">
+          <h1 className="text-5xl md:text-6xl font-black text-white tracking-tight leading-tight max-w-4xl mx-auto mb-6 font-['Plus_Jakarta_Sans',_sans-serif] bg-clip-text text-transparent bg-gradient-to-b from-white to-gray-400">
             Capture Attention. <br />
-            <span className="bg-clip-text text-transparent bg-gradient-to-r from-gray-900 via-gray-700 to-gray-500">
-              Convert More Storefront Visitors.
+            <span className="bg-clip-text text-transparent bg-gradient-to-r from-violet-400 via-fuchsia-400 to-rose-400">
+              Convert Storefront Visitors.
             </span>
           </h1>
-          <p className="text-gray-500 text-lg md:text-xl max-w-2xl mx-auto mb-8 leading-relaxed">
+          <p className="text-gray-400 text-base md:text-lg max-w-2xl mx-auto mb-8 leading-relaxed">
             Stop losing sales to standard, static sliders. CarouselCraft gives you 6 ultra-premium layouts built with Framer Motion to elevate your brand catalog.
           </p>
           <div className="flex justify-center items-center gap-4 mb-16">
             <button
               onClick={() => handleUseTemplate(1, "Classic Slider Carousel")}
-              className="bg-gray-900 hover:bg-black text-white font-bold px-8 py-4 rounded-2xl shadow-xl shadow-gray-900/10 hover:shadow-2xl transition-all text-base flex items-center gap-2"
+              className="bg-white text-gray-900 font-extrabold px-8 py-4 rounded-2xl shadow-xl shadow-white/5 hover:scale-103 active:scale-97 transition-all text-base flex items-center gap-2"
             >
-              Start Building Free <ArrowRight className="w-4 h-4" />
+              Start Building Free <ArrowRight className="w-4 h-4 text-violet-600" />
             </button>
             <a
               href="#templates"
-              className="bg-white hover:bg-gray-50 text-gray-700 font-semibold px-8 py-4 rounded-2xl border border-gray-200 shadow-sm hover:shadow-md transition-all text-base"
+              className="bg-white/5 hover:bg-white/10 text-white font-semibold px-8 py-4 rounded-2xl border border-white/10 shadow-sm transition-all text-base"
             >
               Explore Templates
             </a>
@@ -476,7 +468,7 @@ export default function Index() {
         </div>
 
         {/* Continuous Animated Hero Demo Slider */}
-        <div className="w-full overflow-hidden py-4 border-y border-gray-100 bg-white/40">
+        <div className="w-full overflow-hidden py-4 border-y border-white/[0.04] bg-white/[0.01]">
           <InfiniteMarquee
             slides={[
               { id: "h1", title: "Sculptural Lounge Chair", description: "Design focus", buttonText: "View Drop", imageUrl: "https://images.unsplash.com/photo-1567538096630-e0c55bd6374c?w=600&q=80" },
@@ -496,15 +488,15 @@ export default function Index() {
       <section className="px-8 max-w-6xl mx-auto py-12">
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h2 className="text-2xl font-bold text-gray-900">Your Created Carousels</h2>
+            <h2 className="text-2xl font-bold text-white font-['Plus_Jakarta_Sans',_sans-serif]">Your Created Carousels</h2>
             <p className="text-gray-400 text-sm mt-1">Manage, duplicate and install carousels to your storefront pages.</p>
           </div>
           {carousels.length > 0 && (
             <div className="flex items-center gap-2">
-              <span className="text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-100 px-3 py-1 rounded-full">
+              <span className="text-xs font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1 rounded-full">
                 {carousels.filter(c => c.isActive).length} Published
               </span>
-              <span className="text-xs font-bold text-gray-500 bg-gray-100 border border-gray-200 px-3 py-1 rounded-full">
+              <span className="text-xs font-bold text-gray-400 bg-white/5 border border-white/10 px-3 py-1 rounded-full">
                 {carousels.filter(c => !c.isActive).length} Drafts
               </span>
             </div>
@@ -512,12 +504,12 @@ export default function Index() {
         </div>
 
         {carousels.length === 0 ? (
-          <div className="bg-white border border-gray-100 rounded-3xl p-16 text-center shadow-sm">
-            <div className="w-16 h-16 bg-gray-50 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-gray-100">
+          <div className="bg-[#0d111f]/60 border border-white/[0.06] rounded-3xl p-16 text-center shadow-xl backdrop-blur-md">
+            <div className="w-16 h-16 bg-white/5 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-white/10">
               <Settings2 className="w-6 h-6 text-gray-400" />
             </div>
-            <p className="font-semibold text-gray-800 text-lg">No carousels designed yet</p>
-            <p className="text-gray-400 text-sm max-w-sm mx-auto mt-2">
+            <p className="font-semibold text-white text-lg">No carousels designed yet</p>
+            <p className="text-gray-400 text-sm max-w-sm mx-auto mt-2 leading-relaxed">
               Select one of the premium templates below to spin up a pre-configured slider instantly.
             </p>
           </div>
@@ -528,32 +520,32 @@ export default function Index() {
               return (
                 <div
                   key={item.id}
-                  className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm hover:shadow-lg transition-all flex flex-col justify-between group"
+                  className="bg-[#0d111f]/80 border border-white/[0.06] rounded-2xl p-5 shadow-2xl hover:border-white/[0.12] transition-all flex flex-col justify-between group"
                 >
                   <div>
                     <div className="flex justify-between items-center mb-4">
-                      <span className="text-xs font-bold text-gray-400 bg-gray-50 border border-gray-100 px-2.5 py-1 rounded-lg">
+                      <span className="text-xs font-bold text-gray-400 bg-white/5 border border-white/10 px-2.5 py-1 rounded-lg">
                         {tmpl.name}
                       </span>
                       <button
                         onClick={() => handleAction("toggleActive", item.id)}
                         className={`text-[10px] font-bold px-2.5 py-1 rounded-full border transition-all flex items-center gap-1 ${
                           item.isActive
-                            ? "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100 hover:text-emerald-800"
-                            : "bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100 hover:text-gray-700"
+                            ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/20"
+                            : "bg-white/5 text-gray-400 border-white/10 hover:bg-white/10"
                         }`}
-                        title={item.isActive ? "Click to set as Draft" : "Click to set as Active"}
+                        title={item.isActive ? "Click to set as Draft" : "Click to set as Published"}
                       >
-                        <span className={`w-1.5 h-1.5 rounded-full ${item.isActive ? "bg-emerald-500 animate-pulse" : "bg-gray-400"}`}></span>
+                        <span className={`w-1.5 h-1.5 rounded-full ${item.isActive ? "bg-emerald-400 animate-pulse" : "bg-gray-500"}`}></span>
                         {item.isActive ? "Published" : "Draft"}
                       </button>
                     </div>
 
                     {/* Miniature Visual Preview */}
                     <div
-                      className="h-28 rounded-xl flex items-center justify-center relative overflow-hidden mb-4 border border-gray-100 select-none pointer-events-none"
+                      className="h-28 rounded-xl flex items-center justify-center relative overflow-hidden mb-4 border border-white/[0.04] select-none pointer-events-none"
                       style={{
-                        background: item.design === 3 ? "#0f0f1a" : "radial-gradient(circle at center, #F8FAFC 0%, #F1F5F9 100%)",
+                        background: item.design === 3 ? "#0f0f1a" : "radial-gradient(circle at center, #111528 0%, #080a13 100%)",
                       }}
                     >
                       <div className="w-full scale-[0.55] transform origin-center">
@@ -563,7 +555,7 @@ export default function Index() {
                           return (
                             <PreviewComp
                               slides={displaySlides}
-                              appearance={item.appearance || { borderRadius: 8, backgroundColor: item.design === 3 ? "#0f0f1a" : "#ffffff" }}
+                              appearance={item.appearance || { borderRadius: 8, backgroundColor: item.design === 3 ? "#0f0f1a" : "#0f1324" }}
                               layout={item.design === 3 ? { rotationAngle: 25, centerScale: 1.1, depthSpacing: 80, showReflection: false, cardWidth: 120 } : { visibleCards: 2, gap: 12, cardWidth: 140 }}
                               navigation={{ arrows: false, dots: false }}
                             />
@@ -572,7 +564,7 @@ export default function Index() {
                       </div>
                     </div>
 
-                    <h3 className="font-bold text-gray-900 text-base truncate group-hover:text-violet-600 transition-colors">
+                    <h3 className="font-bold text-white text-base truncate group-hover:text-violet-400 transition-colors">
                       {item.name}
                     </h3>
                     <p className="text-xs text-gray-400 mt-1">
@@ -580,23 +572,23 @@ export default function Index() {
                     </p>
                   </div>
 
-                  <div className="flex gap-2 mt-6 pt-4 border-t border-gray-50">
+                  <div className="flex gap-2 mt-6 pt-4 border-t border-white/[0.04]">
                     <button
                       onClick={() => navigate(`/app/carousel/${item.id}`)}
-                      className="flex-1 bg-gray-50 hover:bg-gray-100 text-gray-700 text-xs font-bold py-2 rounded-lg transition-colors flex items-center justify-center gap-1"
+                      className="flex-1 bg-white/5 hover:bg-white/10 text-white border border-white/10 text-xs font-bold py-2 rounded-lg transition-colors flex items-center justify-center gap-1"
                     >
                       <Edit className="w-3.5 h-3.5" /> Edit
                     </button>
                     <button
                       onClick={() => handleAction("duplicate", item.id)}
-                      className="p-2 text-gray-500 hover:text-gray-800 hover:bg-gray-50 rounded-lg transition-colors"
+                      className="p-2 text-gray-400 hover:text-white hover:bg-white/5 rounded-lg border border-transparent hover:border-white/5 transition-colors"
                       title="Duplicate"
                     >
                       <Copy className="w-4 h-4" />
                     </button>
                     <button
                       onClick={() => handleAction("delete", item.id)}
-                      className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                      className="p-2 text-gray-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg border border-transparent hover:border-red-500/10 transition-colors"
                       title="Delete"
                     >
                       <Trash2 className="w-4 h-4" />
@@ -612,8 +604,8 @@ export default function Index() {
       {/* ── Templates Showcase ── */}
       <section id="templates" className="px-8 max-w-6xl mx-auto py-16">
         <div className="text-center max-w-3xl mx-auto mb-16">
-          <h2 className="text-3xl font-black text-gray-900 tracking-tight">Template Marketplace</h2>
-          <p className="text-gray-500 mt-2">
+          <h2 className="text-3xl font-black text-white tracking-tight font-['Plus_Jakarta_Sans',_sans-serif]">Template Marketplace</h2>
+          <p className="text-gray-400 mt-2">
             Fully functional interactive components running live. Choose one to launch a pre-populated design template.
           </p>
         </div>
@@ -625,15 +617,15 @@ export default function Index() {
             return (
               <div
                 key={tmpl.id}
-                className={`bg-white border rounded-3xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col justify-between relative ${
-                  locked ? "border-gray-100" : "border-gray-200"
+                className={`bg-[#0d111f]/80 border rounded-3xl overflow-hidden shadow-2xl hover:border-white/[0.12] transition-all duration-300 flex flex-col justify-between relative ${
+                  locked ? 'border-white/[0.04]' : 'border-white/[0.06]'
                 }`}
               >
                 {/* Visual Preview Container */}
                 <div
                   className="p-6 h-[320px] flex items-center justify-center relative overflow-hidden flex-shrink-0"
                   style={{
-                    background: tmpl.id === 3 ? "#0f0f1a" : "radial-gradient(circle at center, #F8FAFC 0%, #F1F5F9 100%)",
+                    background: tmpl.id === 3 ? "#0f0f1a" : "radial-gradient(circle at center, #111528 0%, #080a13 100%)",
                   }}
                 >
                   {/* Real Live Running Mini Preview */}
@@ -643,7 +635,7 @@ export default function Index() {
                       return (
                         <PreviewComp
                           slides={tmpl.previewData}
-                          appearance={{ borderRadius: 12, backgroundColor: tmpl.id === 3 ? "#0f0f1a" : "#ffffff" }}
+                          appearance={{ borderRadius: 12, backgroundColor: tmpl.id === 3 ? "#0f0f1a" : "#0d111f" }}
                           layout={tmpl.id === 3 ? { rotationAngle: 35, centerScale: 1.1, depthSpacing: 120, showReflection: false, cardWidth: 160 } : { visibleCards: 2, gap: 16, cardWidth: 180 }}
                           navigation={tmpl.id === 5 ? { marqueeDirection: "left", marqueeSpeed: 14, pauseOnHover: true } : { arrows: true, dots: false }}
                         />
@@ -652,10 +644,10 @@ export default function Index() {
                   </div>
 
                   {locked && (
-                    <div className="absolute inset-0 bg-white/70 backdrop-blur-[2px] flex flex-col items-center justify-center z-20">
-                      <div className="bg-white border border-gray-200 p-4 rounded-2xl shadow-xl flex flex-col items-center">
-                        <Lock className="w-6 h-6 text-amber-500 mb-2" />
-                        <span className="text-xs font-bold text-gray-900 uppercase tracking-wide">
+                    <div className="absolute inset-0 bg-black/75 backdrop-blur-[2px] flex flex-col items-center justify-center z-20">
+                      <div className="bg-[#0d111f] border border-white/[0.08] p-4 rounded-2xl shadow-2xl flex flex-col items-center">
+                        <Lock className="w-6 h-6 text-amber-400 mb-2" />
+                        <span className="text-xs font-bold text-gray-200 uppercase tracking-wide">
                           Unlock with {tmpl.tier === "pro" ? "Pro Plan" : "Elite Plan"}
                         </span>
                       </div>
@@ -664,19 +656,19 @@ export default function Index() {
                 </div>
 
                 {/* Details */}
-                <div className="p-6 border-t border-gray-100 flex-1 flex flex-col justify-between">
+                <div className="p-6 border-t border-white/[0.04] flex-1 flex flex-col justify-between">
                   <div>
                     <div className="flex justify-between items-center mb-2">
-                      <h3 className="font-extrabold text-gray-950 text-xl">{tmpl.name}</h3>
+                      <h3 className="font-extrabold text-white text-xl font-['Plus_Jakarta_Sans',_sans-serif]">{tmpl.name}</h3>
                       <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${badge.className}`}>
                         {badge.label}
                       </span>
                     </div>
-                    <p className="text-sm text-gray-500 mb-4">{tmpl.tagline}</p>
+                    <p className="text-sm text-gray-400 mb-4">{tmpl.tagline}</p>
                     <ul className="space-y-2 mb-6">
                       {tmpl.features.map((f, i) => (
-                        <li key={i} className="flex items-center text-xs text-gray-600 gap-2">
-                          <Check className="w-3.5 h-3.5 text-green-500 flex-shrink-0" />
+                        <li key={i} className="flex items-center text-xs text-gray-300 gap-2">
+                          <Check className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
                           <span>{f}</span>
                         </li>
                       ))}
@@ -686,7 +678,7 @@ export default function Index() {
                   <div className="flex gap-3 mt-auto">
                     <button
                       onClick={() => setPreviewingTemplate(tmpl)}
-                      className="flex-1 bg-gray-50 hover:bg-gray-100 border border-gray-200 text-gray-700 text-sm font-bold py-3 rounded-xl transition-colors flex items-center justify-center gap-1.5"
+                      className="flex-1 bg-white/5 hover:bg-white/10 border border-white/10 text-white text-sm font-bold py-3 rounded-xl transition-colors flex items-center justify-center gap-1.5"
                     >
                       <Eye className="w-4 h-4" /> Live Preview
                     </button>
@@ -700,8 +692,8 @@ export default function Index() {
                       }}
                       className={`flex-1 text-sm font-bold py-3 rounded-xl transition-all ${
                         locked
-                          ? "bg-amber-500 text-white hover:bg-amber-600"
-                          : "bg-gray-900 text-white hover:bg-black"
+                          ? "bg-gradient-to-r from-amber-500 to-orange-600 text-white hover:opacity-90 shadow-lg shadow-amber-900/10"
+                          : "bg-white text-gray-900 hover:bg-gray-150"
                       }`}
                     >
                       {locked ? "Upgrade to Unlock" : "Use Template"}
@@ -715,10 +707,10 @@ export default function Index() {
       </section>
 
       {/* ── Why CarouselCraft ── */}
-      <section className="bg-white border-y border-gray-100 py-16 px-8">
+      <section className="bg-[#0a0d17]/40 border-y border-white/[0.04] py-16 px-8">
         <div className="max-w-6xl mx-auto">
           <div className="text-center max-w-2xl mx-auto mb-16">
-            <h2 className="text-3xl font-black text-gray-900 tracking-tight">Why Merchants Choose CarouselCraft</h2>
+            <h2 className="text-3xl font-black text-white tracking-tight font-['Plus_Jakarta_Sans',_sans-serif]">Why Merchants Choose CarouselCraft</h2>
             <p className="text-gray-400 mt-2">Built to solve standard e-commerce conversions constraints natively.</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
@@ -727,12 +719,12 @@ export default function Index() {
               { title: "Mobile-First Ergonomics", desc: "Swipe, drag, and tap touch mechanics fully optimized for iOS & Android." },
               { title: "Fast-Loading Performance", desc: "Lightweight Framer Motion animations keep storefront LCP scores green." },
             ].map((item, idx) => (
-              <div key={idx} className="p-6 rounded-2xl hover:bg-gray-50 transition-colors">
-                <div className="w-12 h-12 rounded-xl bg-gray-100 flex items-center justify-center mx-auto mb-4 font-bold text-gray-900">
+              <div key={idx} className="p-6 rounded-2xl hover:bg-white/[0.02] border border-transparent hover:border-white/[0.04] transition-all duration-300">
+                <div className="w-12 h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center mx-auto mb-4 font-bold text-white">
                   {idx + 1}
                 </div>
-                <h3 className="font-bold text-gray-900 text-lg mb-2">{item.title}</h3>
-                <p className="text-gray-500 text-sm leading-relaxed">{item.desc}</p>
+                <h3 className="font-bold text-white text-lg mb-2">{item.title}</h3>
+                <p className="text-gray-400 text-sm leading-relaxed">{item.desc}</p>
               </div>
             ))}
           </div>
@@ -742,17 +734,17 @@ export default function Index() {
       {/* ── Feature Comparison ── */}
       <section className="px-8 max-w-6xl mx-auto py-16">
         <div className="text-center max-w-2xl mx-auto mb-16">
-          <h2 className="text-3xl font-black text-gray-900 tracking-tight">Feature Comparison</h2>
+          <h2 className="text-3xl font-black text-white tracking-tight font-['Plus_Jakarta_Sans',_sans-serif]">Feature Comparison</h2>
           <p className="text-gray-400 mt-2">Compare feature tiers and choose the perfect scaling stage.</p>
         </div>
-        <div className="bg-white border border-gray-100 rounded-3xl overflow-hidden shadow-sm">
+        <div className="bg-[#0d111f]/80 border border-white/[0.06] rounded-3xl overflow-hidden shadow-2xl">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="bg-gray-50 border-b border-gray-100">
+              <tr className="bg-white/5 border-b border-white/[0.04]">
                 <th className="p-5 font-bold text-sm text-gray-400">Features</th>
-                <th className="p-5 font-bold text-sm text-gray-900 text-center">Free</th>
-                <th className="p-5 font-bold text-sm text-violet-700 text-center">Pro</th>
-                <th className="p-5 font-bold text-sm text-rose-700 text-center">Elite</th>
+                <th className="p-5 font-bold text-sm text-gray-300 text-center">Free</th>
+                <th className="p-5 font-bold text-sm text-violet-400 text-center">Pro</th>
+                <th className="p-5 font-bold text-sm text-rose-400 text-center">Elite</th>
               </tr>
             </thead>
             <tbody>
@@ -765,11 +757,11 @@ export default function Index() {
                 { name: "Clickable storefront slides", free: "❌", pro: "❌", elite: "✓" },
                 { name: "Future template drops", free: "❌", pro: "❌", elite: "✓" },
               ].map((row, idx) => (
-                <tr key={idx} className="border-b border-gray-100 hover:bg-gray-50/50 transition-colors">
-                  <td className="p-5 font-semibold text-gray-700 text-sm">{row.name}</td>
-                  <td className="p-5 text-gray-500 text-sm text-center">{row.free}</td>
-                  <td className="p-5 text-gray-900 font-semibold text-sm text-center">{row.pro}</td>
-                  <td className="p-5 text-gray-950 font-bold text-sm text-center">{row.elite}</td>
+                <tr key={idx} className="border-b border-white/[0.04] hover:bg-white/[0.01] transition-colors">
+                  <td className="p-5 font-semibold text-gray-300 text-sm">{row.name}</td>
+                  <td className="p-5 text-gray-400 text-sm text-center">{row.free}</td>
+                  <td className="p-5 text-violet-300 font-semibold text-sm text-center">{row.pro}</td>
+                  <td className="p-5 text-rose-300 font-bold text-sm text-center">{row.elite}</td>
                 </tr>
               ))}
             </tbody>
@@ -779,13 +771,13 @@ export default function Index() {
 
       {/* ── Pricing CTA Banner ── */}
       <section className="px-8 max-w-6xl mx-auto py-16">
-        <div className="bg-gradient-to-r from-violet-600 via-indigo-700 to-purple-800 rounded-3xl p-10 md:p-14 text-white shadow-xl relative overflow-hidden flex flex-col md:flex-row items-center justify-between gap-8">
+        <div className="bg-gradient-to-r from-violet-600 via-indigo-700 to-purple-800 rounded-3xl p-10 md:p-14 text-white shadow-2xl relative overflow-hidden flex flex-col md:flex-row items-center justify-between gap-8 border border-white/[0.08]">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,_var(--tw-gradient-stops))] from-white/10 via-transparent to-transparent pointer-events-none" />
           <div className="relative z-10 max-w-xl text-center md:text-left">
             <span className="inline-flex items-center gap-1 bg-white/15 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider mb-4 border border-white/10">
               <Sparkles className="w-3.5 h-3.5" /> Unlock Premium Layouts
             </span>
-            <h2 className="text-3xl md:text-4xl font-extrabold tracking-tight">Ready to Elevate Your Storefront Experience?</h2>
+            <h2 className="text-3xl md:text-4xl font-extrabold tracking-tight font-['Plus_Jakarta_Sans',_sans-serif]">Ready to Elevate Your Storefront?</h2>
             <p className="mt-4 text-white/80 leading-relaxed text-sm md:text-base">
               Upgrade your subscription to unlock gravity-defying staggers, 3D Coverflow viewports, and automated scrolling marquee loops. Subscriptions activate instantly.
             </p>
@@ -802,12 +794,12 @@ export default function Index() {
       </section>
 
       {/* ── FAQ Section ── */}
-      <section className="px-8 max-w-4xl mx-auto py-16 border-t border-gray-100">
+      <section className="px-8 max-w-4xl mx-auto py-16 border-t border-white/[0.04]">
         <div className="text-center mb-12">
-          <h2 className="text-3xl font-black text-gray-900 tracking-tight">Frequently Asked Questions</h2>
+          <h2 className="text-3xl font-black text-white tracking-tight font-['Plus_Jakarta_Sans',_sans-serif]">Frequently Asked Questions</h2>
           <p className="text-gray-400 mt-2">Common answers regarding setup, configurations and designs.</p>
         </div>
-        <div className="bg-white border border-gray-100 rounded-3xl p-8 shadow-sm">
+        <div className="bg-[#0d111f]/80 border border-white/[0.06] rounded-3xl p-8 shadow-2xl">
           <FAQItem
             question="How do simulated subscriptions work?"
             answer="Since we are testing locally without live sandbox credentials, clicking upgrade immediately writes the updated plan tier into our SQLite store model. This allows instant gating verification."
@@ -828,18 +820,18 @@ export default function Index() {
       </section>
 
       {/* ── Footer ── */}
-      <footer className="border-t border-gray-100 mt-12 py-8 text-center text-gray-400 text-xs">
+      <footer className="border-t border-white/[0.04] mt-12 py-8 text-center text-gray-500 text-xs">
         <p>© 2026 CarouselCraft. Design premium storefront carousels. All rights reserved.</p>
       </footer>
 
       {/* ── Premium Live Preview Drawer/Modal ── */}
       {previewingTemplate && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-6">
-          <div className="bg-white rounded-3xl shadow-2xl max-w-4xl w-full overflow-hidden flex flex-col relative animate-in fade-in zoom-in-95 duration-200">
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-6">
+          <div className="bg-[#0d111f] rounded-3xl shadow-2xl max-w-4xl w-full overflow-hidden flex flex-col relative animate-in fade-in zoom-in-95 duration-200 border border-white/[0.08]">
             {/* Modal Header */}
-            <div className="px-8 py-5 border-b border-gray-100 flex items-center justify-between relative z-20 bg-white">
+            <div className="px-8 py-5 border-b border-white/[0.04] flex items-center justify-between relative z-20 bg-[#0d111f]">
               <div>
-                <h3 className="font-extrabold text-gray-950 text-xl flex items-center gap-2">
+                <h3 className="font-extrabold text-white text-xl flex items-center gap-2 font-['Plus_Jakarta_Sans',_sans-serif]">
                   {previewingTemplate.name}
                   <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${planBadges[previewingTemplate.tier].className}`}>
                     {planBadges[previewingTemplate.tier].label}
@@ -849,7 +841,7 @@ export default function Index() {
               </div>
               <button
                 onClick={() => setPreviewingTemplate(null)}
-                className="w-10 h-10 rounded-full bg-gray-50 hover:bg-gray-100 text-gray-400 hover:text-gray-700 flex items-center justify-center transition-colors relative z-30"
+                className="w-10 h-10 rounded-full bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white flex items-center justify-center transition-colors relative z-30"
               >
                 ✕
               </button>
@@ -859,7 +851,7 @@ export default function Index() {
             <div
               className="p-8 h-[440px] flex items-center justify-center overflow-hidden relative z-10"
               style={{
-                background: previewingTemplate.id === 3 ? "#0f0f1a" : "radial-gradient(circle at center, #F8FAFC 0%, #F1F5F9 100%)",
+                background: previewingTemplate.id === 3 ? "#0f0f1a" : "radial-gradient(circle at center, #111528 0%, #080a13 100%)",
               }}
             >
               <div className="w-full scale-[0.72] md:scale-[0.80] transform origin-center">
@@ -868,7 +860,7 @@ export default function Index() {
                   return (
                     <PreviewComp
                       slides={previewingTemplate.previewData}
-                      appearance={{ borderRadius: 16, backgroundColor: previewingTemplate.id === 3 ? "#0f0f1a" : "#ffffff" }}
+                      appearance={{ borderRadius: 16, backgroundColor: previewingTemplate.id === 3 ? "#0f0f1a" : "#0d111f" }}
                       layout={previewingTemplate.id === 3 ? { rotationAngle: 42, centerScale: 1.15, depthSpacing: 180, showReflection: true, cardWidth: 260 } : { visibleCards: 2, gap: 24, cardWidth: 280 }}
                       navigation={{ arrows: true, dots: true, marqueeSpeed: 20, marqueeDirection: "left", pauseOnHover: true }}
                     />
@@ -878,14 +870,14 @@ export default function Index() {
             </div>
 
             {/* Modal Actions */}
-            <div className="px-8 py-5 border-t border-gray-100 bg-gray-50 flex items-center justify-between relative z-20">
+            <div className="px-8 py-5 border-t border-white/[0.04] bg-[#0a0d17]/40 flex items-center justify-between relative z-20">
               <div className="text-xs text-gray-400 max-w-md">
                 Requires a <strong>{planBadges[previewingTemplate.tier].label}</strong> subscription to customize and publish to live Shopify themes.
               </div>
               <div className="flex gap-3">
                 <button
                   onClick={() => setPreviewingTemplate(null)}
-                  className="bg-white border border-gray-200 text-gray-700 text-sm font-semibold px-6 py-2.5 rounded-xl hover:bg-gray-100 transition-colors"
+                  className="bg-white/5 border border-white/10 text-white text-sm font-semibold px-6 py-2.5 rounded-xl hover:bg-white/10 transition-colors"
                 >
                   Close Preview
                 </button>
@@ -901,8 +893,8 @@ export default function Index() {
                   }}
                   className={`text-sm font-bold px-6 py-2.5 rounded-xl transition-all ${
                     isLocked(previewingTemplate.tier)
-                      ? "bg-amber-500 text-white hover:bg-amber-600"
-                      : "bg-gray-900 text-white hover:bg-black"
+                      ? "bg-gradient-to-r from-amber-500 to-orange-600 text-white hover:opacity-90 shadow-lg shadow-amber-900/10"
+                      : "bg-white text-gray-900 hover:bg-gray-150"
                   }`}
                 >
                   {isLocked(previewingTemplate.tier) ? "Upgrade to Unlock" : "Use Template"}
