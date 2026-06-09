@@ -73,7 +73,7 @@ export function ClassicSlider({ slides, appearance, layout, navigation, shopDoma
             >
               {/* Classic card: white, clean, vertical stack */}
               <div
-                className="bg-white border border-gray-100 overflow-hidden h-full flex flex-col group shadow-md hover:shadow-xl transition-shadow duration-300"
+                className="bg-white border border-gray-100 overflow-hidden h-auto flex flex-col group shadow-md hover:shadow-xl transition-shadow duration-300"
                 style={{ borderRadius: `${borderRadius}px` }}
               >
                 <div className="relative aspect-[4/5] w-full overflow-hidden bg-gray-100 flex-shrink-0">
@@ -193,7 +193,7 @@ export function FloatingCards({ slides, appearance, layout, navigation, shopDoma
             >
               {/* Floating card: gradient accent bar, colored shadow on hover */}
               <div
-                className="bg-white overflow-hidden h-full flex flex-col"
+                className="bg-white overflow-hidden h-auto flex flex-col"
                 style={{
                   borderRadius: `${borderRadius}px`,
                   boxShadow: "0 8px 32px -8px rgba(0,0,0,0.12)",
