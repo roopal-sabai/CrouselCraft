@@ -763,7 +763,7 @@ export default function CarouselEditor() {
 
         {/* Canvas */}
         <div
-          className="flex-1 overflow-auto p-6 flex justify-center"
+          className="flex-1 overflow-auto p-6 flex justify-center items-start"
           style={{ backgroundColor: "#E5E7EB" }}
         >
           <div

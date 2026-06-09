@@ -76,7 +76,10 @@ export function ClassicSlider({ slides, appearance, layout, navigation, shopDoma
                 className="bg-white border border-gray-100 overflow-hidden h-auto flex flex-col group shadow-md hover:shadow-xl transition-shadow duration-300"
                 style={{ borderRadius: `${borderRadius}px` }}
               >
-                <div className="relative aspect-[4/5] w-full overflow-hidden bg-gray-100 flex-shrink-0">
+                <div 
+                  className="relative w-full overflow-hidden bg-gray-100 flex-shrink-0"
+                  style={{ aspectRatio: "4/5" }}
+                >
                   {slide.imageUrl ? (
                     <img
                       src={slide.imageUrl}
@@ -201,7 +204,10 @@ export function FloatingCards({ slides, appearance, layout, navigation, shopDoma
               >
                 {/* Gradient accent top bar */}
                 <div className={`h-1.5 w-full bg-gradient-to-r ${accent} flex-shrink-0`} />
-                <div className="relative flex-shrink-0 overflow-hidden bg-gray-50 aspect-[4/5] w-full">
+                <div 
+                  className="relative flex-shrink-0 overflow-hidden bg-gray-50 w-full"
+                  style={{ aspectRatio: "4/5" }}
+                >
                   {slide.imageUrl ? (
                     <img
                       src={slide.imageUrl}
