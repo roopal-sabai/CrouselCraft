@@ -193,21 +193,17 @@ export const action = async ({ request }) => {
       6: DATASET_LUXURY,
     }[design] || DATASET_FURNITURE;
 
-    await Promise.all(
-      starters.map((slide, index) =>
-        prisma.slide.create({
-          data: {
-            carouselId: newCarousel.id,
-            order: index,
-            title: slide.title,
-            description: slide.description,
-            buttonText: slide.buttonText,
-            linkUrl: "/collections/all",
-            imageUrl: slide.imageUrl,
-          },
-        })
-      )
-    );
+    await prisma.slide.createMany({
+      data: starters.map((slide, index) => ({
+        carouselId: newCarousel.id,
+        order: index,
+        title: slide.title,
+        description: slide.description,
+        buttonText: slide.buttonText,
+        linkUrl: "/collections/all",
+        imageUrl: slide.imageUrl,
+      })),
+    });
 
     return redirect(`/app/carousel/${newCarousel.id}`);
   }
@@ -232,21 +228,17 @@ export const action = async ({ request }) => {
         },
       });
 
-      await Promise.all(
-        source.slides.map((s) =>
-          prisma.slide.create({
-            data: {
-              carouselId: duplicate.id,
-              order: s.order,
-              title: s.title,
-              description: s.description,
-              buttonText: s.buttonText,
-              linkUrl: s.linkUrl,
-              imageUrl: s.imageUrl,
-            },
-          })
-        )
-      );
+      await prisma.slide.createMany({
+        data: source.slides.map((s) => ({
+          carouselId: duplicate.id,
+          order: s.order,
+          title: s.title,
+          description: s.description,
+          buttonText: s.buttonText,
+          linkUrl: s.linkUrl,
+          imageUrl: s.imageUrl,
+        })),
+      });
     }
   }
 
