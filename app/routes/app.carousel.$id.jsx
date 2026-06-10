@@ -75,7 +75,7 @@ export const action = async ({ request, params }) => {
       },
     });
   } else if (intent === "deleteSlide") {
-    await prisma.slide.delete({ where: { id: formData.get("slideId") } });
+    await prisma.slide.deleteMany({ where: { id: formData.get("slideId") } });
   }
 
   return { success: true };

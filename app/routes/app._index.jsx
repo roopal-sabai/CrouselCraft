@@ -252,7 +252,7 @@ export const action = async ({ request }) => {
 
   if (intent === "delete") {
     const carouselId = formData.get("carouselId");
-    await prisma.carousel.delete({
+    await prisma.carousel.deleteMany({
       where: { id: carouselId },
     });
   }
