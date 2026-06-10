@@ -1,7 +1,7 @@
 # Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
 
 client_id = "9e66345d0abc6c08463cb08b7355865b"
-application_url = "https://example.com"
+application_url = "https://carouselcraft.norexa.online/"
 embedded = true
 name = "CarouselCraft"
 
@@ -44,10 +44,14 @@ api_version = "2026-07"
   uri = "/webhooks/app/scopes_update"
   topics = [ "app/scopes_update" ]
 
+  [[webhooks.subscriptions]]
+  compliance_topics = [ "customers/data_request", "customers/redact", "shop/redact" ]
+  uri = "/webhooks/gdpr"
+
 [auth]
 redirect_urls = [
   "https://carouselcraft.norexa.online/api/auth"
 ]
 
 [build]
-automatically_update_urls_on_dev = false
+automatically_update_urls_on_dev = true
