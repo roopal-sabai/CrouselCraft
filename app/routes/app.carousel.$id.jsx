@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useLoaderData, useNavigate, useSubmit } from "react-router";
+import { useState, useEffect } from "react";
+import { useLoaderData, useNavigate, useSubmit, useActionData, useNavigation } from "react-router";
 import { authenticate } from "../shopify.server";
 import prisma from "../db.server";
 import {
@@ -424,12 +424,22 @@ export default function CarouselEditor() {
   const { carousel, plan, shopDomain } = useLoaderData();
   const submit = useSubmit();
   const navigate = useNavigate();
+  const actionData = useActionData();
+  const nav = useNavigation();
 
   const [activeTab, setActiveTab] = useState("settings");
   const [previewMode, setPreviewMode] = useState("desktop");
   const [name, setName] = useState(carousel.name);
   const [design, setDesign] = useState(carousel.design || 1);
   const [editingSlideId, setEditingSlideId] = useState(null);
+
+  const isSaving = nav.state === "submitting" && nav.formData?.get("intent") === "updateSettings";
+
+  useEffect(() => {
+    if (actionData?.success) {
+      window.shopify?.toast.show("Carousel saved successfully");
+    }
+  }, [actionData]);
 
   const defaults = DESIGN_DEFAULTS[design] || DESIGN_DEFAULTS[1];
 
@@ -502,8 +512,12 @@ export default function CarouselEditor() {
             onChange={(e) => setName(e.target.value)}
             className="font-bold text-gray-900 bg-transparent border-none focus:ring-0 flex-1 min-w-0 text-sm"
           />
-          <button onClick={handleSave} className="bg-gray-900 text-white px-4 py-2 rounded-lg hover:bg-black transition-colors font-semibold text-sm flex-shrink-0">
-            Save
+          <button 
+            onClick={handleSave} 
+            disabled={isSaving}
+            className="bg-gray-900 text-white px-4 py-2 rounded-lg hover:bg-black transition-colors font-semibold text-sm flex-shrink-0 disabled:opacity-50"
+          >
+            {isSaving ? "Saving..." : "Save"}
           </button>
         </div>
 
