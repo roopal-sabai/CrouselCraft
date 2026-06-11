@@ -60,12 +60,13 @@ export default function Pricing() {
   const submit = useSubmit();
   const navigate = useNavigate();
   const [billingInterval, setBillingInterval] = useState("monthly");
+  const actionPath = typeof window !== "undefined" ? window.location.pathname + window.location.search : "";
 
   const handleSubscribe = (planId) => {
     const formData = new FormData();
     formData.append("plan", planId);
     formData.append("interval", billingInterval);
-    submit(formData, { method: "POST" });
+    submit(formData, { method: "post", action: actionPath });
   };
 
   const plans = [

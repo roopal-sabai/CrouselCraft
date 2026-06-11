@@ -39,6 +39,8 @@ export const action = async ({ request, params }) => {
   const formData = await request.formData();
   const intent = formData.get("intent");
 
+  console.log("[Editor Action Debug]", { intent, params });
+
   if (intent === "updateSettings") {
     await prisma.carousel.update({
       where: { id: params.id },
@@ -426,6 +428,7 @@ export default function CarouselEditor() {
   const navigate = useNavigate();
   const actionData = useActionData();
   const nav = useNavigation();
+  const actionPath = typeof window !== "undefined" ? window.location.pathname + window.location.search : "";
 
   const [activeTab, setActiveTab] = useState("settings");
   const [previewMode, setPreviewMode] = useState("desktop");
@@ -477,7 +480,7 @@ export default function CarouselEditor() {
     fd.append("appearance", JSON.stringify(appearance));
     fd.append("layout", JSON.stringify(layout));
     fd.append("navigation", JSON.stringify(navigation));
-    submit(fd, { method: "POST" });
+    submit(fd, { method: "post", action: actionPath });
   };
 
   const renderPreview = () => {
@@ -519,6 +522,23 @@ export default function CarouselEditor() {
           >
             {isSaving ? "Saving..." : "Save"}
           </button>
+        </div>
+
+        {/* Carousel ID Display */}
+        <div className="px-4 py-3 bg-gray-50 border-b border-gray-100 flex items-center justify-between text-xs">
+          <span className="font-semibold text-gray-500">Carousel ID:</span>
+          <div className="flex items-center gap-2">
+            <code className="bg-gray-200 px-2 py-0.5 rounded font-mono text-[11px] text-gray-800">{carousel.id}</code>
+            <button
+              onClick={() => {
+                navigator.clipboard.writeText(carousel.id);
+                window.shopify?.toast.show("ID copied to clipboard");
+              }}
+              className="text-gray-500 hover:text-gray-900 bg-white border border-gray-200 px-2 py-1 rounded shadow-xs cursor-pointer font-semibold"
+            >
+              Copy
+            </button>
+          </div>
         </div>
 
         {/* Main tabs */}
@@ -665,7 +685,7 @@ export default function CarouselEditor() {
                         const fd = new FormData(e.target);
                         fd.append("intent", "updateSlide");
                         fd.append("slideId", slide.id);
-                        submit(fd, { method: "POST" });
+                        submit(fd, { method: "post", action: actionPath });
                         setEditingSlideId(null);
                       }}
                       className="p-4 space-y-3 bg-gray-50"
@@ -731,7 +751,7 @@ export default function CarouselEditor() {
                             const fd = new FormData();
                             fd.append("intent", "deleteSlide");
                             fd.append("slideId", slide.id);
-                            submit(fd, { method: "POST" });
+                            submit(fd, { method: "post", action: actionPath });
                           }
                         }}
                         className="p-1.5 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-lg opacity-0 group-hover:opacity-100 transition-all flex-shrink-0"
@@ -744,7 +764,7 @@ export default function CarouselEditor() {
               ))}
 
               <button
-                onClick={() => { const fd = new FormData(); fd.append("intent", "createSlide"); submit(fd, { method: "POST" }); }}
+                onClick={() => { const fd = new FormData(); fd.append("intent", "createSlide"); submit(fd, { method: "post", action: actionPath }); }}
                 className="w-full py-4 border-2 border-dashed border-gray-200 rounded-xl text-gray-400 font-semibold text-sm hover:border-gray-900 hover:text-gray-900 hover:bg-gray-50 transition-all flex items-center justify-center gap-2"
               >
                 <Plus className="w-4 h-4" /> Add slide
@@ -793,7 +813,13 @@ export default function CarouselEditor() {
               <div className="font-bold text-gray-900 text-sm">My Store</div>
               <div className="flex-1" />
               {["Home", "Shop", "About"].map((l) => (
-                <span key={l} className="text-xs text-gray-400">{l}</span>
+                <button
+                  key={l}
+                  onClick={() => window.shopify?.toast.show(`Navigated to ${l} page (simulation)`)}
+                  className="text-xs text-gray-400 hover:text-gray-900 bg-transparent border-0 cursor-pointer p-0"
+                >
+                  {l}
+                </button>
               ))}
             </div>
 
