@@ -50,6 +50,7 @@ export const action = async ({ request, params }) => {
         appearance: formData.get("appearance"),
         layout: formData.get("layout"),
         navigation: formData.get("navigation"),
+        isActive: formData.get("isActive") === "true",
       },
     });
   } else if (intent === "createSlide") {
@@ -435,6 +436,7 @@ export default function CarouselEditor() {
   const [name, setName] = useState(carousel.name);
   const [design, setDesign] = useState(carousel.design || 1);
   const [editingSlideId, setEditingSlideId] = useState(null);
+  const [isActive, setIsActive] = useState(carousel.isActive);
 
   const isSaving = nav.state === "submitting" && nav.formData?.get("intent") === "updateSettings";
 
@@ -480,6 +482,7 @@ export default function CarouselEditor() {
     fd.append("appearance", JSON.stringify(appearance));
     fd.append("layout", JSON.stringify(layout));
     fd.append("navigation", JSON.stringify(navigation));
+    fd.append("isActive", isActive ? "true" : "false");
     submit(fd, { method: "post", action: actionPath });
   };
 
@@ -563,6 +566,57 @@ export default function CarouselEditor() {
         <div className="flex-1 overflow-y-auto">
           {activeTab === "settings" ? (
             <div className="p-5 space-y-6 pb-16">
+
+              {/* Publication Status */}
+              <div>
+                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3">Status</p>
+                <div className="flex items-center justify-between p-3 rounded-xl border border-gray-100 bg-gray-50">
+                  <div className="flex flex-col gap-0.5 text-left">
+                    <span className="text-xs font-bold text-gray-800">
+                      {isActive ? "Published" : "Draft Mode"}
+                    </span>
+                    <span className="text-[10px] text-gray-500">
+                      {isActive
+                        ? "Visible on storefront via widget block."
+                        : "Hidden from storefront auto-discovery."}
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setIsActive(!isActive)}
+                    className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                      isActive ? "bg-emerald-500" : "bg-gray-200"
+                    }`}
+                  >
+                    <span
+                      className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out ${
+                        isActive ? "translate-x-5" : "translate-x-0"
+                      }`}
+                    />
+                  </button>
+                </div>
+              </div>
+
+              {/* Storefront Integration Helper */}
+              <div className="p-3.5 rounded-xl border border-blue-100 bg-blue-50/50 text-left">
+                <p className="text-[10px] font-bold text-blue-600 uppercase tracking-widest mb-1.5">Storefront Integration</p>
+                <p className="text-xs text-gray-600 mb-3 leading-relaxed">
+                  To display this carousel on your theme, add the <strong>Carousel Showcase</strong> App Block in the Theme Editor and paste this ID:
+                </p>
+                <div className="flex items-center gap-2 bg-white border border-gray-200 p-2 rounded-lg justify-between shadow-2xs">
+                  <code className="font-mono text-xs text-gray-800 select-all truncate max-w-[180px]">{carousel.id}</code>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      navigator.clipboard.writeText(carousel.id);
+                      window.shopify?.toast.show("ID copied!");
+                    }}
+                    className="bg-gray-900 hover:bg-black text-white font-bold text-[11px] px-3 py-1.5 rounded-md transition-colors cursor-pointer"
+                  >
+                    Copy ID
+                  </button>
+                </div>
+              </div>
 
               {/* Template picker: visual cards */}
               <div>

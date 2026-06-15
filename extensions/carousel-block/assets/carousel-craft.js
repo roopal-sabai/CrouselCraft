@@ -1,5 +1,24 @@
 (function () {
-  const API_HOST = "https://carouselcraft.norexa.online";
+  let API_HOST = "https://carouselcraft.norexa.online";
+
+  // Dynamically switch API_HOST in development to match the dynamic Cloudflare/Ngrok/Local tunnel URL
+  if (document.currentScript && document.currentScript.src) {
+    const scriptSrc = document.currentScript.src;
+    if (
+      scriptSrc.includes("trycloudflare.com") ||
+      scriptSrc.includes("localhost") ||
+      scriptSrc.includes("ngrok") ||
+      scriptSrc.includes("shopifypreview.com")
+    ) {
+      try {
+        const url = new URL(scriptSrc);
+        API_HOST = url.origin;
+        console.log("[CarouselCraft] Dev Mode: Using local API Host:", API_HOST);
+      } catch (e) {
+        console.error("[CarouselCraft] Failed to parse script origin:", e);
+      }
+    }
+  }
 
   document.addEventListener("DOMContentLoaded", initCarousels);
   // Also run immediately in case DOMContentLoaded has already fired (e.g., in theme editor HMR)

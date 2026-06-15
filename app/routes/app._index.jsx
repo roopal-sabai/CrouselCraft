@@ -301,9 +301,16 @@ export default function Index() {
   const navigate = useNavigate();
   const submit = useSubmit();
   const navigation = useNavigation();
-  const actionPath = typeof window !== "undefined" ? window.location.pathname + window.location.search : "";
+  const actionPath = typeof window !== "undefined"
+    ? (() => {
+        const url = new URL(window.location.href);
+        url.searchParams.set("index", "");
+        return url.pathname + url.search;
+      })()
+    : "";
 
   const [previewingTemplate, setPreviewingTemplate] = useState(null);
+  const [activeFilter, setActiveFilter] = useState("all");
   const plan = shop?.subscriptionPlan || "free";
 
   const isLocked = (tier) => {
@@ -488,30 +495,73 @@ export default function Index() {
           </div>
           {carousels.length > 0 && (
             <div className="flex items-center gap-2">
-              <span className="text-xs font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1 rounded-full">
+              <button
+                onClick={() => setActiveFilter(activeFilter === "published" ? "all" : "published")}
+                className={`text-xs font-bold px-3.5 py-1.5 rounded-full border transition-all cursor-pointer ${
+                  activeFilter === "published"
+                    ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/40 shadow-lg shadow-emerald-500/10 scale-105"
+                    : "bg-white/5 text-gray-400 border-white/10 hover:bg-white/10 hover:text-white"
+                }`}
+              >
                 {carousels.filter(c => c.isActive).length} Published
-              </span>
-              <span className="text-xs font-bold text-gray-400 bg-white/5 border border-white/10 px-3 py-1 rounded-full">
+              </button>
+              <button
+                onClick={() => setActiveFilter(activeFilter === "drafts" ? "all" : "drafts")}
+                className={`text-xs font-bold px-3.5 py-1.5 rounded-full border transition-all cursor-pointer ${
+                  activeFilter === "drafts"
+                    ? "bg-white/10 text-white border-white/30 shadow-lg scale-105"
+                    : "bg-white/5 text-gray-400 border-white/10 hover:bg-white/10 hover:text-white"
+                }`}
+              >
                 {carousels.filter(c => !c.isActive).length} Drafts
-              </span>
+              </button>
             </div>
           )}
         </div>
 
-        {carousels.length === 0 ? (
-          <div className="bg-[#0d111f]/60 border border-white/[0.06] rounded-3xl p-16 text-center shadow-xl backdrop-blur-md">
-            <div className="w-16 h-16 bg-white/5 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-white/10">
-              <Settings2 className="w-6 h-6 text-gray-400" />
-            </div>
-            <p className="font-semibold text-white text-lg">No carousels designed yet</p>
-            <p className="text-gray-400 text-sm max-w-sm mx-auto mt-2 leading-relaxed">
-              Select one of the premium templates below to spin up a pre-configured slider instantly.
-            </p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {carousels.map((item) => {
-              const tmpl = templates.find((t) => t.id === item.design) || templates[0];
+        {(() => {
+          const filtered = carousels.filter((c) => {
+            if (activeFilter === "published") return c.isActive;
+            if (activeFilter === "drafts") return !c.isActive;
+            return true;
+          });
+
+          if (carousels.length === 0) {
+            return (
+              <div className="bg-[#0d111f]/60 border border-white/[0.06] rounded-3xl p-16 text-center shadow-xl backdrop-blur-md">
+                <div className="w-16 h-16 bg-white/5 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-white/10">
+                  <Settings2 className="w-6 h-6 text-gray-400" />
+                </div>
+                <p className="font-semibold text-white text-lg">No carousels designed yet</p>
+                <p className="text-gray-400 text-sm max-w-sm mx-auto mt-2 leading-relaxed">
+                  Select one of the premium templates below to spin up a pre-configured slider instantly.
+                </p>
+              </div>
+            );
+          }
+
+          if (filtered.length === 0) {
+            return (
+              <div className="bg-[#0d111f]/60 border border-white/[0.06] rounded-3xl p-16 text-center shadow-xl backdrop-blur-md">
+                <div className="w-16 h-16 bg-white/5 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-white/10">
+                  <Settings2 className="w-6 h-6 text-gray-400" />
+                </div>
+                <p className="font-semibold text-white text-lg">
+                  {activeFilter === "published" ? "No published carousels" : "No draft carousels"}
+                </p>
+                <p className="text-gray-400 text-sm max-w-sm mx-auto mt-2 leading-relaxed">
+                  {activeFilter === "published"
+                    ? "Go to the editor to publish your carousel configurations to your storefront."
+                    : "All created carousels are currently published."}
+                </p>
+              </div>
+            );
+          }
+
+          return (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filtered.map((item) => {
+                const tmpl = templates.find((t) => t.id === item.design) || templates[0];
               return (
                 <div
                   key={item.id}
@@ -522,18 +572,16 @@ export default function Index() {
                       <span className="text-xs font-bold text-gray-400 bg-white/5 border border-white/10 px-2.5 py-1 rounded-lg">
                         {tmpl.name}
                       </span>
-                      <button
-                        onClick={() => handleAction("toggleActive", item.id)}
-                        className={`text-[10px] font-bold px-2.5 py-1 rounded-full border transition-all flex items-center gap-1 ${
+                      <div
+                        className={`text-[10px] font-bold px-2.5 py-1 rounded-full border flex items-center gap-1 ${
                           item.isActive
-                            ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/20"
-                            : "bg-white/5 text-gray-400 border-white/10 hover:bg-white/10"
+                            ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
+                            : "bg-white/5 text-gray-400 border-white/10"
                         }`}
-                        title={item.isActive ? "Click to set as Draft" : "Click to set as Published"}
                       >
-                        <span className={`w-1.5 h-1.5 rounded-full ${item.isActive ? "bg-emerald-400 animate-pulse" : "bg-gray-500"}`}></span>
+                        <span className={`w-1.5 h-1.5 rounded-full ${item.isActive ? "bg-emerald-400" : "bg-gray-500"}`}></span>
                         {item.isActive ? "Published" : "Draft"}
-                      </button>
+                      </div>
                     </div>
 
                     {/* Miniature Visual Preview */}
@@ -588,13 +636,6 @@ export default function Index() {
                       <Edit className="w-3.5 h-3.5" /> Edit
                     </button>
                     <button
-                      onClick={() => handleAction("duplicate", item.id)}
-                      className="p-2 text-gray-400 hover:text-white hover:bg-white/5 rounded-lg border border-transparent hover:border-white/5 transition-colors"
-                      title="Duplicate"
-                    >
-                      <Copy className="w-4 h-4" />
-                    </button>
-                    <button
                       onClick={() => handleAction("delete", item.id)}
                       className="p-2 text-gray-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg border border-transparent hover:border-red-500/10 transition-colors"
                       title="Delete"
@@ -606,7 +647,8 @@ export default function Index() {
               );
             })}
           </div>
-        )}
+        );
+      })()}
       </section>
 
       {/* ── Templates Showcase ── */}
