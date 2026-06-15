@@ -181,7 +181,7 @@ export const action = async ({ request }) => {
         appearance: JSON.stringify(defaults.appearance),
         layout: JSON.stringify(defaults.layout),
         navigation: JSON.stringify(defaults.navigation),
-        isActive: false,
+        isActive: true,
       },
     });
 
@@ -226,7 +226,7 @@ export const action = async ({ request }) => {
           appearance: source.appearance,
           layout: source.layout,
           navigation: source.navigation,
-          isActive: false,
+          isActive: true,
         },
       });
 
