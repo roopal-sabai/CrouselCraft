@@ -128,7 +128,7 @@ export const loader = async ({ request }) => {
 };
 
 export const action = async ({ request }) => {
-  const { session } = await authenticate.admin(request);
+  const { session, redirect: shopifyRedirect } = await authenticate.admin(request);
   const shopDomain = session.shop;
   const formData = await request.formData();
   const intent = formData.get("intent");
@@ -207,7 +207,7 @@ export const action = async ({ request }) => {
       })),
     });
 
-    return redirect(`/app/carousel/${newCarousel.id}`);
+    return shopifyRedirect(`/app/carousel/${newCarousel.id}`);
   }
 
   if (intent === "duplicate") {

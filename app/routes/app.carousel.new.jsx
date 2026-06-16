@@ -23,7 +23,7 @@ export const loader = async ({ request }) => {
 };
 
 export const action = async ({ request }) => {
-  const { session } = await authenticate.admin(request);
+  const { session, redirect: shopifyRedirect } = await authenticate.admin(request);
   const shopDomain = session.shop;
   const formData = await request.formData();
   const design = parseInt(formData.get("design") || "1", 10);
@@ -31,7 +31,7 @@ export const action = async ({ request }) => {
   const intent = formData.get("intent");
 
   if (intent === "upgrade") {
-    return redirect("/app/pricing");
+    return shopifyRedirect("/app/pricing");
   }
 
   // Ensure shop exists
@@ -47,8 +47,8 @@ export const action = async ({ request }) => {
 
   // Verify plan allows this design
   const plan = shop.subscriptionPlan || "free";
-  if (design > 1 && plan === "free") return redirect("/app/pricing");
-  if (design > 3 && plan === "pro") return redirect("/app/pricing");
+  if (design > 1 && plan === "free") return shopifyRedirect("/app/pricing");
+  if (design > 3 && plan === "pro") return shopifyRedirect("/app/pricing");
 
   const newCarousel = await prisma.carousel.create({
     data: {
@@ -71,7 +71,7 @@ export const action = async ({ request }) => {
     },
   });
 
-  return redirect(`/app/carousel/${newCarousel.id}`);
+  return shopifyRedirect(`/app/carousel/${newCarousel.id}`);
 };
 
 const templates = [
