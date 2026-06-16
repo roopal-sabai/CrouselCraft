@@ -87,7 +87,7 @@
 
   async function discoverAndSelectCarousel(shop, container) {
     try {
-      const response = await fetch(`${API_HOST}/api/carousels?shop=${shop}`);
+      const response = await fetch(`${API_HOST}/api/carousels?shop=${shop}&_t=${Date.now()}`);
       if (!response.ok) throw new Error("Failed to fetch carousels list");
       const carousels = await response.json();
 
@@ -115,7 +115,7 @@
 
   async function fetchCarousel(id, shop, container) {
     try {
-      const response = await fetch(`${API_HOST}/api/carousel/${id}`);
+      const response = await fetch(`${API_HOST}/api/carousel/${id}?_t=${Date.now()}`);
       if (response.status === 404 && shop) {
         console.warn(`[CarouselCraft] Carousel ID ${id} not found. Running auto-discovery fallback.`);
         await discoverAndSelectCarousel(shop, container);
@@ -127,7 +127,7 @@
 
       if (window.Shopify && window.Shopify.designMode && shop) {
         try {
-          const listResponse = await fetch(`${API_HOST}/api/carousels?shop=${shop}`);
+          const listResponse = await fetch(`${API_HOST}/api/carousels?shop=${shop}&_t=${Date.now()}`);
           if (listResponse.ok) {
             const carousels = await listResponse.json();
             renderCarouselPicker(carousels, id, shop, container);
@@ -207,6 +207,10 @@
     container.style.borderRadius = "16px";
     container.style.padding = "1rem";
     container.style.overflow = "hidden";
+    
+    // Set --visible-cards variable dynamically for CSS responsive calculations
+    const visibleCount = layout.visibleCards || 3;
+    container.style.setProperty("--visible-cards", visibleCount);
 
     // Setup base HTML structures depending on designs
     let html = "";
@@ -246,8 +250,12 @@
         cardStyle = `transform: rotate(${rot});`;
       }
 
+      if (layout.cardWidth) {
+        cardStyle += ` width: ${layout.cardWidth}px; min-width: ${layout.cardWidth}px; max-width: 100%;`;
+      }
+
       return `
-        <div class="cc-slide flex-shrink-0 w-full md:w-[calc(100%/${visibleCount}-1rem)] bg-white border border-gray-100 shadow-sm transition-all duration-300 ${cardShapeClass} p-4 flex flex-col justify-between" style="${cardStyle}">
+        <div class="cc-slide flex-shrink-0 bg-white border border-gray-100 shadow-sm transition-all duration-300 ${cardShapeClass} p-4 flex flex-col justify-between" style="${cardStyle}">
           <div>
             <div class="aspect-[4/5] w-full overflow-hidden ${cardShapeClass === 'rounded-full' ? 'rounded-full' : 'rounded-lg'} bg-gray-50 mb-4">
               ${slide.imageUrl ? `<img src="${slide.imageUrl}" alt="${slide.title || ''}" class="w-full h-full object-cover" loading="lazy" />` : `<div class="w-full h-full flex items-center justify-center bg-gray-100 text-gray-300">No Image</div>`}

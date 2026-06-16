@@ -11,6 +11,12 @@
   box-sizing: border-box;
 }
 
+.carousel-craft-embed img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
 /* Helper Utilities */
 .carousel-craft-embed .flex {
   display: flex;
@@ -210,6 +216,16 @@
   scroll-snap-align: start;
   flex-shrink: 0;
   transition: transform 0.3s ease, opacity 0.3s ease, box-shadow 0.3s ease;
+  width: calc(100% - 2rem);
+  min-width: calc(100% - 2rem);
+  max-width: 100%;
+}
+
+@media (min-width: 768px) {
+  .cc-slide {
+    width: calc(100% / var(--visible-cards, 3) - 1rem);
+    min-width: calc(100% / var(--visible-cards, 3) - 1rem);
+  }
 }
 
 .cc-slide:hover {
@@ -311,9 +327,23 @@
 /* Stacked Deck Styles */
 .cc-stacked-container {
   perspective: 1000px;
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 520px;
+  width: 100%;
+  max-width: 384px;
+  margin-left: auto;
+  margin-right: auto;
+  overflow: hidden;
+  cursor: pointer;
 }
 
 .cc-stacked-card {
+  position: absolute;
+  width: 100%;
+  max-width: 384px;
   left: 0;
   right: 0;
   margin: 0 auto;
@@ -330,3 +360,18 @@
   text-decoration: none;
   cursor: pointer;
 }
+
+/* Scoped layout utility helper fallbacks for storefront */
+.carousel-craft-embed .relative { position: relative; }
+.carousel-craft-embed .absolute { position: absolute; }
+.carousel-craft-embed .cursor-pointer { cursor: pointer; }
+.carousel-craft-embed .mx-auto { margin-left: auto; margin-right: auto; }
+.carousel-craft-embed .max-w-sm { max-width: 384px; }
+.carousel-craft-embed .pointer-events-none { pointer-events: none; }
+.carousel-craft-embed .uppercase { text-transform: uppercase; }
+.carousel-craft-embed .tracking-widest { letter-spacing: 0.1em; }
+.carousel-craft-embed .bg-black\/60 { background-color: rgba(0, 0, 0, 0.6); }
+.carousel-craft-embed .bottom-2 { bottom: 0.5rem; }
+.carousel-craft-embed .left-1\/2 { left: 50%; }
+.carousel-craft-embed .-translate-x-1\/2 { transform: translateX(-50%); }
+
