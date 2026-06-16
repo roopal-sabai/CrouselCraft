@@ -26,6 +26,46 @@
     initCarousels();
   }
 
+  // Listen for Shopify Theme Editor events to re-initialize
+  document.addEventListener("shopify:section:load", initCarousels);
+  document.addEventListener("shopify:block:select", initCarousels);
+
+  // Set up MutationObserver to automatically initialize any newly inserted embeds
+  // or handle updates to the data-carousel-id attribute in the theme editor
+  if (typeof MutationObserver !== "undefined") {
+    const observer = new MutationObserver((mutations) => {
+      let shouldReinit = false;
+      for (const mutation of mutations) {
+        if (mutation.type === "childList") {
+          for (const node of mutation.addedNodes) {
+            if (node.nodeType === Node.ELEMENT_NODE) {
+              if (node.classList.contains("carousel-craft-embed") || node.querySelector(".carousel-craft-embed")) {
+                shouldReinit = true;
+                break;
+              }
+            }
+          }
+        } else if (mutation.type === "attributes" && mutation.attributeName === "data-carousel-id") {
+          // If data-carousel-id changed (e.g. user pasted a new ID), re-initialize it
+          mutation.target.removeAttribute("data-initialized");
+          shouldReinit = true;
+        }
+        if (shouldReinit) break;
+      }
+      if (shouldReinit) {
+        initCarousels();
+      }
+    });
+
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ["data-carousel-id"]
+    });
+  }
+
+
   async function initCarousels() {
     const embeds = document.querySelectorAll(".carousel-craft-embed:not([data-initialized])");
     for (const embed of embeds) {

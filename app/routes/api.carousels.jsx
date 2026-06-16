@@ -19,7 +19,7 @@ export const loader = async ({ request }) => {
   }
 
   try {
-    const carousels = await prisma.carousel.findMany({
+    let carousels = await prisma.carousel.findMany({
       where: {
         shopId: shop,
         isActive: true, // Only return published carousels
@@ -31,6 +31,22 @@ export const loader = async ({ request }) => {
       },
       orderBy: { updatedAt: "desc" },
     });
+
+    // Fallback: If no active carousels, get the most recently updated carousel (active or not)
+    if (carousels.length === 0) {
+      carousels = await prisma.carousel.findMany({
+        where: {
+          shopId: shop,
+        },
+        include: {
+          slides: {
+            orderBy: { order: "asc" },
+          },
+        },
+        orderBy: { updatedAt: "desc" },
+        take: 1,
+      });
+    }
 
     // Format output
     const data = carousels.map((c) => ({
