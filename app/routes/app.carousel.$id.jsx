@@ -527,22 +527,7 @@ export default function CarouselEditor() {
           </button>
         </div>
 
-        {/* Carousel ID Display */}
-        <div className="px-4 py-3 bg-gray-50 border-b border-gray-100 flex items-center justify-between text-xs">
-          <span className="font-semibold text-gray-500">Carousel ID:</span>
-          <div className="flex items-center gap-2">
-            <code className="bg-gray-200 px-2 py-0.5 rounded font-mono text-[11px] text-gray-800">{carousel.id}</code>
-            <button
-              onClick={() => {
-                navigator.clipboard.writeText(carousel.id);
-                window.shopify?.toast.show("ID copied to clipboard");
-              }}
-              className="text-gray-500 hover:text-gray-900 bg-white border border-gray-200 px-2 py-1 rounded shadow-xs cursor-pointer font-semibold"
-            >
-              Copy
-            </button>
-          </div>
-        </div>
+
 
         {/* Main tabs */}
         <div className="flex border-b border-gray-100 bg-gray-50">
@@ -600,20 +585,20 @@ export default function CarouselEditor() {
               {/* Storefront Integration Helper */}
               <div className="p-3.5 rounded-xl border border-blue-100 bg-blue-50/50 text-left">
                 <p className="text-[10px] font-bold text-blue-600 uppercase tracking-widest mb-1.5">Storefront Integration</p>
-                <p className="text-xs text-gray-600 mb-3 leading-relaxed">
-                  To display this carousel on your theme, add the <strong>Carousel Showcase</strong> App Block in the Theme Editor and paste this ID:
+                <p className="text-xs text-gray-600 mb-2 leading-relaxed">
+                  To display this carousel on your storefront, add the <strong>Carousel Showcase</strong> App Block in the Theme Editor and enter this name:
                 </p>
                 <div className="flex items-center gap-2 bg-white border border-gray-200 p-2 rounded-lg justify-between shadow-2xs">
-                  <code className="font-mono text-xs text-gray-800 select-all truncate max-w-[180px]">{carousel.id}</code>
+                  <span className="text-xs font-semibold text-gray-800 truncate max-w-[180px]">{name}</span>
                   <button
                     type="button"
                     onClick={() => {
-                      navigator.clipboard.writeText(carousel.id);
-                      window.shopify?.toast.show("ID copied!");
+                      navigator.clipboard.writeText(name);
+                      window.shopify?.toast.show("Name copied!");
                     }}
-                    className="bg-gray-900 hover:bg-black text-white font-bold text-[11px] px-3 py-1.5 rounded-md transition-colors cursor-pointer"
+                    className="bg-gray-900 hover:bg-black text-white font-bold text-[11px] px-3 py-1.5 rounded-md transition-colors cursor-pointer flex-shrink-0"
                   >
-                    Copy ID
+                    Copy Name
                   </button>
                 </div>
               </div>

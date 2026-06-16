@@ -1,4 +1,4 @@
-<div class="carousel-craft-embed" data-shop="{{ shop.permanent_domain }}" data-carousel-id="{{ block.settings.carousel_id }}">
+<div class="carousel-craft-embed" data-shop="{{ shop.permanent_domain }}" data-carousel-name="{{ block.settings.carousel_name }}">
   <!-- Loading state -->
   <div class="carousel-craft-loading" style="text-align: center; padding: 2rem 0; color: #9ca3af; font-family: sans-serif;">
     Loading Carousel...
@@ -14,10 +14,10 @@
   "settings": [
     {
       "type": "text",
-      "id": "carousel_id",
-      "label": "Carousel ID",
-      "info": "Copy the Carousel ID from the CarouselCraft App Dashboard and paste it here.",
-      "placeholder": "Enter Carousel ID"
+      "id": "carousel_name",
+      "label": "Carousel Name",
+      "info": "Enter the name of the carousel you created in the CarouselCraft app. If left blank, your most recently edited carousel will load automatically.",
+      "placeholder": "e.g. Classic Slider Carousel"
     }
   ]
 }
