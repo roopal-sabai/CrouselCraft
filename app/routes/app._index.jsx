@@ -613,19 +613,6 @@ export default function Index() {
                     <p className="text-xs text-gray-400 mt-1">
                       {item._count.slides} Slides · Modified {item.formattedUpdatedAt}
                     </p>
-                    <div className="mt-2 flex items-center justify-between bg-white/5 border border-white/10 px-2.5 py-1.5 rounded-lg text-[10px] text-gray-300">
-                      <span className="font-mono truncate mr-2">ID: {item.id}</span>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          navigator.clipboard.writeText(item.id);
-                          window.shopify?.toast.show("ID copied to clipboard");
-                        }}
-                        className="bg-white/10 hover:bg-white/20 text-white font-bold px-2 py-0.5 rounded cursor-pointer transition-colors"
-                      >
-                        Copy
-                      </button>
-                    </div>
                   </div>
 
                   <div className="flex gap-2 mt-6 pt-4 border-t border-white/[0.04]">
