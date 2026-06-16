@@ -1,4 +1,4 @@
-<div class="carousel-craft-embed" data-shop="{{ shop.permanent_domain }}" data-carousel-name="{{ block.settings.carousel_name }}">
+<div class="carousel-craft-embed" data-shop="{{ shop.permanent_domain }}">
   <!-- Loading state -->
   <div class="carousel-craft-loading" style="text-align: center; padding: 2rem 0; color: #9ca3af; font-family: sans-serif;">
     Loading Carousel...
@@ -11,14 +11,6 @@
   "target": "section",
   "stylesheet": "carousel-craft.css",
   "javascript": "carousel-craft.js",
-  "settings": [
-    {
-      "type": "text",
-      "id": "carousel_name",
-      "label": "Carousel Name",
-      "info": "Enter the name of the carousel you created in the CarouselCraft app. If left blank, your most recently edited carousel will load automatically.",
-      "placeholder": "e.g. Classic Slider Carousel"
-    }
-  ]
+  "settings": []
 }
 {% endschema %}

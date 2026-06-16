@@ -582,26 +582,7 @@ export default function CarouselEditor() {
                 </div>
               </div>
 
-              {/* Storefront Integration Helper */}
-              <div className="p-3.5 rounded-xl border border-blue-100 bg-blue-50/50 text-left">
-                <p className="text-[10px] font-bold text-blue-600 uppercase tracking-widest mb-1.5">Storefront Integration</p>
-                <p className="text-xs text-gray-600 mb-2 leading-relaxed">
-                  To display this carousel on your storefront, add the <strong>Carousel Showcase</strong> App Block in the Theme Editor and enter this name:
-                </p>
-                <div className="flex items-center gap-2 bg-white border border-gray-200 p-2 rounded-lg justify-between shadow-2xs">
-                  <span className="text-xs font-semibold text-gray-800 truncate max-w-[180px]">{name}</span>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      navigator.clipboard.writeText(name);
-                      window.shopify?.toast.show("Name copied!");
-                    }}
-                    className="bg-gray-900 hover:bg-black text-white font-bold text-[11px] px-3 py-1.5 rounded-md transition-colors cursor-pointer flex-shrink-0"
-                  >
-                    Copy Name
-                  </button>
-                </div>
-              </div>
+
 
               {/* Template picker: visual cards */}
               <div>

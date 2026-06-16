@@ -31,7 +31,6 @@
   document.addEventListener("shopify:block:select", initCarousels);
 
   // Set up MutationObserver to automatically initialize any newly inserted embeds
-  // or handle updates to the data-carousel-name attribute in the theme editor
   if (typeof MutationObserver !== "undefined") {
     const observer = new MutationObserver((mutations) => {
       let shouldReinit = false;
@@ -45,10 +44,6 @@
               }
             }
           }
-        } else if (mutation.type === "attributes" && mutation.attributeName === "data-carousel-name") {
-          // If data-carousel-name changed, re-initialize it
-          mutation.target.removeAttribute("data-initialized");
-          shouldReinit = true;
         }
         if (shouldReinit) break;
       }
@@ -59,9 +54,7 @@
 
     observer.observe(document.body, {
       childList: true,
-      subtree: true,
-      attributes: true,
-      attributeFilter: ["data-carousel-name"]
+      subtree: true
     });
   }
 
@@ -70,18 +63,17 @@
     const embeds = document.querySelectorAll(".carousel-craft-embed:not([data-initialized])");
     for (const embed of embeds) {
       embed.setAttribute("data-initialized", "true");
-      const carouselName = embed.getAttribute("data-carousel-name")?.trim();
       const shop = embed.getAttribute("data-shop");
 
       if (shop) {
-        await discoverAndSelectCarousel(shop, embed, carouselName);
+        await discoverAndSelectCarousel(shop, embed);
       } else {
         embed.innerHTML = `<div style="text-align: center; padding: 2rem; color: #9ca3af; font-family: sans-serif; font-size: 13px;">Shop domain missing</div>`;
       }
     }
   }
 
-  async function discoverAndSelectCarousel(shop, container, targetName) {
+  async function discoverAndSelectCarousel(shop, container) {
     try {
       const response = await fetch(`${API_HOST}/api/carousels?shop=${shop}&_t=${Date.now()}`);
       if (!response.ok) throw new Error("Failed to fetch carousels list");
@@ -97,75 +89,12 @@
         return;
       }
 
-      let selectedCarousel = carousels[0];
-      if (targetName) {
-        const match = carousels.find(c => c.name.trim().toLowerCase() === targetName.trim().toLowerCase());
-        if (match) {
-          selectedCarousel = match;
-        } else {
-          console.warn(`[CarouselCraft] Carousel named "${targetName}" not found. Displaying latest carousel instead.`);
-        }
-      }
-
+      const selectedCarousel = carousels[0];
       renderCarousel(selectedCarousel, container);
-
-      if (window.Shopify && window.Shopify.designMode) {
-        renderCarouselPicker(carousels, selectedCarousel.id, shop, container);
-      }
     } catch (error) {
       console.error("[CarouselCraft Discovery Error]", error);
       container.innerHTML = `<div style="text-align: center; padding: 2rem; color: #9ca3af; font-family: sans-serif; font-size: 13px;">Failed to load carousel showcase</div>`;
     }
-  }
-
-  function renderCarouselPicker(carousels, selectedId, shop, container) {
-    const existingPicker = container.querySelector(".cc-theme-picker-header");
-    if (existingPicker) existingPicker.remove();
-
-    const header = document.createElement("div");
-    header.className = "cc-theme-picker-header";
-    header.style.cssText = "background: #f3f4f6; border: 1px solid #e5e7eb; border-radius: 8px; padding: 10px 14px; margin-bottom: 16px; font-family: sans-serif; display: flex; flex-direction: column; gap: 8px; box-shadow: 0 1px 2px 0 rgba(0,0,0,0.05); text-align: left;";
-
-    let optionsHtml = carousels.map(c => 
-      `<option value="${c.id}" ${c.id === selectedId ? 'selected' : ''}>${c.name} (${c.slides.length} slides)</option>`
-    ).join("");
-
-    header.innerHTML = `
-      <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
-        <span style="font-size: 11px; font-weight: 700; color: #374151; text-transform: uppercase;">Carousel Selection Helper (Theme Editor Only)</span>
-      </div>
-      <div style="display: flex; gap: 8px; align-items: center;">
-        <select class="cc-picker-select" style="flex: 1; padding: 6px 10px; border-radius: 6px; border: 1px solid #d1d5db; font-size: 12px; background: white; color: #1f2937; cursor: pointer;">
-          ${optionsHtml}
-        </select>
-        <button class="cc-picker-copy-btn" style="background: white; border: 1px solid #d1d5db; padding: 6px 10px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; color: #374151; white-space: nowrap;">Copy Name</button>
-      </div>
-      <div style="font-size: 10px; color: #6b7280; line-height: 1.4;">
-        To save this choice permanently, copy the Carousel Name and paste it into the **Carousel Name** input field in the sidebar.
-      </div>
-    `;
-
-    const select = header.querySelector(".cc-picker-select");
-    select.addEventListener("change", async (e) => {
-      const newId = e.target.value;
-      const selected = carousels.find(c => c.id === newId);
-      if (selected) {
-        renderCarousel(selected, container);
-        renderCarouselPicker(carousels, newId, shop, container);
-      }
-    });
-
-    const copyBtn = header.querySelector(".cc-picker-copy-btn");
-    copyBtn.addEventListener("click", () => {
-      const currentId = select.value;
-      const selected = carousels.find(c => c.id === currentId);
-      if (selected) {
-        navigator.clipboard.writeText(selected.name);
-        alert("Carousel Name copied! Please paste it into the Carousel Name field in the theme settings sidebar.");
-      }
-    });
-
-    container.insertBefore(header, container.firstChild);
   }
 
   function renderCarousel(data, container) {
