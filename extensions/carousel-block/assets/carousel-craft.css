@@ -375,3 +375,24 @@
 .carousel-craft-embed .left-1\/2 { left: 50%; }
 .carousel-craft-embed .-translate-x-1\/2 { transform: translateX(-50%); }
 
+/* Coverflow Dots and Styling */
+.cc-coverflow-dots {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+}
+.cc-coverflow-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: rgba(255, 255, 255, 0.3);
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.cc-coverflow-dot.active {
+  background-color: #ffffff;
+  width: 24px;
+  border-radius: 4px;
+}

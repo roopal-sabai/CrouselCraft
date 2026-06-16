@@ -129,8 +129,11 @@
     } else if (design === 4) {
       // Stacked Deck
       html = renderStacked(slides, appearance, layout, navigation);
+    } else if (design === 3) {
+      // Coverflow 3D
+      html = renderCoverflow(slides, appearance, layout, navigation);
     } else {
-      // Standard / Classic / Floating / Coverflow / 3D
+      // Standard / Classic / Floating / 3D Showcase
       html = renderSlider(slides, design, appearance, layout, navigation);
     }
 
@@ -139,6 +142,8 @@
     // Attach event listeners and interactions
     if (design === 4) {
       setupStackedDeck(container);
+    } else if (design === 3) {
+      setupCoverflow(container, layout, navigation);
     } else {
       if (design === 2) {
         setupFloatingCards(container, layout);
@@ -210,18 +215,21 @@
   }
 
   function renderMarquee(slides, appearance, layout, navigation) {
+    const cardWidth = layout.cardWidth || 280;
     const speed = layout.marqueeSpeed === "fast" ? "12s" : layout.marqueeSpeed === "slow" ? "32s" : "20s";
     const cardShapeClass = layout.cardShape === "rounded" ? "rounded-xl" : "rounded-none";
+    const borderRadius = appearance.borderRadius || 16;
 
     // Duplicate slides to ensure seamless loop
-    const doubledSlides = [...slides, ...slides, ...slides];
+    const doubledSlides = [...slides, ...slides, ...slides, ...slides];
 
     let itemsHtml = doubledSlides.map((slide) => `
-      <div class="cc-marquee-item flex-shrink-0 w-44 bg-white border border-gray-100 p-3 shadow-xs ${cardShapeClass} mx-2">
-        <div class="aspect-square w-full overflow-hidden ${cardShapeClass} bg-gray-50 mb-2">
+      <div class="cc-marquee-item flex-shrink-0 bg-white border border-gray-100 p-4 shadow-sm mx-3" style="width: ${cardWidth}px; border-radius: ${borderRadius}px;">
+        <div class="aspect-square w-full overflow-hidden bg-gray-50 mb-3" style="border-radius: ${borderRadius - 4}px;">
           ${slide.imageUrl ? `<img src="${slide.imageUrl}" alt="" class="w-full h-full object-cover" loading="lazy" />` : ""}
         </div>
-        <p class="font-bold text-gray-900 text-xs truncate text-center">${slide.title || 'Brand'}</p>
+        <p class="font-bold text-gray-900 text-sm truncate text-center">${slide.title || 'Brand'}</p>
+        ${slide.description ? `<p class="text-gray-500 text-xs line-clamp-1 text-center mt-1">${slide.description}</p>` : ""}
       </div>
     `).join("");
 
@@ -452,5 +460,129 @@
         card.style.boxShadow = "0 8px 32px -8px rgba(0,0,0,0.12)";
       });
     });
+  }
+
+  function renderCoverflow(slides, appearance, layout, navigation) {
+    const cardWidth = layout.cardWidth || 300;
+    const borderRadius = appearance.borderRadius || 16;
+
+    let slidesHtml = slides.map((slide, index) => {
+      return `
+        <div class="cc-coverflow-card absolute cursor-pointer" 
+             style="width: ${cardWidth}px; transform-style: preserve-3d; transition: transform 0.4s cubic-bezier(0.25, 0.8, 0.25, 1), opacity 0.4s ease, filter 0.4s ease;" 
+             data-index="${index}">
+          <div class="bg-gray-900 overflow-hidden shadow-lg h-[360px]" style="border-radius: ${borderRadius}px;">
+            ${slide.imageUrl ? `<img src="${slide.imageUrl}" alt="${slide.title || ''}" class="w-full h-full object-cover" />` : `<div class="w-full h-full flex items-center justify-center text-gray-600 text-sm">No Image</div>`}
+            <div class="cc-coverflow-info absolute inset-0 flex flex-col justify-end p-5" style="background: linear-gradient(to top, rgba(0,0,0,0.85) 0%, transparent 65%);">
+              <h3 class="text-white font-bold text-lg leading-tight mb-1">${slide.title || 'Untitled'}</h3>
+              ${slide.buttonText ? `<a href="${slide.linkUrl || '#'}" class="mt-2 inline-block bg-white text-gray-900 text-xs font-bold px-4 py-2 rounded-lg hover:bg-gray-100 transition-colors w-fit cc-btn">${slide.buttonText}</a>` : ''}
+            </div>
+          </div>
+        </div>
+      `;
+    }).join("");
+
+    return `
+      <div class="cc-coverflow-wrapper relative flex flex-col items-center justify-center py-8" style="min-height: 500px; width: 100%;">
+        <div class="cc-coverflow-stage relative w-full flex items-center justify-center overflow-hidden" style="height: 420px; perspective: 1200px;">
+          ${slidesHtml}
+        </div>
+        <div class="flex items-center gap-5 mt-6 z-20">
+          ${navigation.arrows !== false ? `
+            <button class="cc-coverflow-arrow cc-coverflow-prev bg-white/10 hover:bg-white/20 border border-white/20 text-white p-3 rounded-full transition-all cursor-pointer" aria-label="Previous">❮</button>
+          ` : ""}
+          ${navigation.dots !== false ? `
+            <div class="cc-coverflow-dots flex gap-2">
+              ${slides.map((_, i) => `<button class="cc-coverflow-dot ${i === 0 ? 'active' : ''}" data-index="${i}"></button>`).join("")}
+            </div>
+          ` : ""}
+          ${navigation.arrows !== false ? `
+            <button class="cc-coverflow-arrow cc-coverflow-next bg-white/10 hover:bg-white/20 border border-white/20 text-white p-3 rounded-full transition-all cursor-pointer" aria-label="Next">❯</button>
+          ` : ""}
+        </div>
+      </div>
+    `;
+  }
+
+  function setupCoverflow(container, layout, navigation) {
+    const stage = container.querySelector(".cc-coverflow-stage");
+    if (!stage) return;
+    const cards = Array.from(stage.querySelectorAll(".cc-coverflow-card"));
+    const dots = container.querySelectorAll(".cc-coverflow-dot");
+    const prevBtn = container.querySelector(".cc-coverflow-prev");
+    const nextBtn = container.querySelector(".cc-coverflow-next");
+
+    let currentIndex = 0;
+    const rotationAngle = layout.rotationAngle ?? 42;
+    const centerScale = layout.centerScale ?? 1.12;
+    const depthSpacing = layout.depthSpacing ?? 200;
+
+    const update = () => {
+      cards.forEach((card, idx) => {
+        const offset = idx - currentIndex;
+        const absOffset = Math.abs(offset);
+        const isVisible = absOffset <= 2;
+        
+        if (!isVisible) {
+          card.style.display = "none";
+          return;
+        }
+        
+        card.style.display = "block";
+        const isActive = offset === 0;
+        const xPos = offset * depthSpacing;
+        const rotateY = offset * -rotationAngle;
+        const scale = isActive ? centerScale : Math.max(0.72, 1 - absOffset * 0.14);
+        const zIndex = 10 - absOffset;
+        const opacity = absOffset >= 2 ? 0.25 : isActive ? 1 : 0.55;
+        const brightness = isActive ? 1 : Math.max(0.5, 1 - absOffset * 0.25);
+        
+        card.style.transform = `translateX(${xPos}px) rotateY(${rotateY}deg) scale(${scale})`;
+        card.style.zIndex = zIndex;
+        card.style.opacity = opacity;
+        card.style.filter = `brightness(${brightness})`;
+      });
+
+      // Update dots
+      dots.forEach((dot, i) => {
+        if (i === currentIndex) dot.classList.add("active");
+        else dot.classList.remove("active");
+      });
+    };
+
+    // Attach click listeners to cards
+    cards.forEach((card, idx) => {
+      card.addEventListener("click", () => {
+        currentIndex = idx;
+        update();
+      });
+    });
+
+    // Arrow controls
+    if (prevBtn) {
+      prevBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        currentIndex = (currentIndex - 1 + cards.length) % cards.length;
+        update();
+      });
+    }
+    if (nextBtn) {
+      nextBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        currentIndex = (currentIndex + 1) % cards.length;
+        update();
+      });
+    }
+
+    // Dot controls
+    dots.forEach((dot) => {
+      dot.addEventListener("click", (e) => {
+        e.stopPropagation();
+        currentIndex = parseInt(dot.getAttribute("data-index"));
+        update();
+      });
+    });
+
+    update();
   }
 })();
