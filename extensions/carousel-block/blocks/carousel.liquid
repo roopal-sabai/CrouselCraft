@@ -1,4 +1,4 @@
-<div class="carousel-craft-embed" data-shop="{{ shop.permanent_domain }}">
+<div class="carousel-craft-embed" data-shop="{{ shop.permanent_domain }}" data-carousel-name="{% if block.settings.carousel_name != blank %}{{ block.settings.carousel_name | escape }}{% else %}{{ section.settings.carousel_name | escape }}{% endif %}">
   <!-- Loading state -->
   <div class="carousel-craft-loading" style="text-align: center; padding: 2rem 0; color: #9ca3af; font-family: sans-serif;">
     Loading Carousel...
@@ -11,6 +11,13 @@
   "target": "section",
   "stylesheet": "carousel-craft.css",
   "javascript": "carousel-craft.js",
-  "settings": []
+  "settings": [
+    {
+      "type": "text",
+      "id": "carousel_name",
+      "label": "Carousel Name",
+      "info": "Optional: Type the name of the carousel you want to display (e.g., 'Floating Cards Carousel'). If left blank, the most recently edited active carousel will show automatically."
+    }
+  ]
 }
 {% endschema %}

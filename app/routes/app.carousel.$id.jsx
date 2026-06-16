@@ -66,6 +66,10 @@ export const action = async ({ request, params }) => {
         imageUrl: "https://images.unsplash.com/photo-1618220179428-22790b46a0eb?w=800&q=80",
       },
     });
+    await prisma.carousel.update({
+      where: { id: params.id },
+      data: { updatedAt: new Date() },
+    });
   } else if (intent === "updateSlide") {
     await prisma.slide.update({
       where: { id: formData.get("slideId") },
@@ -77,8 +81,16 @@ export const action = async ({ request, params }) => {
         imageUrl: formData.get("imageUrl"),
       },
     });
+    await prisma.carousel.update({
+      where: { id: params.id },
+      data: { updatedAt: new Date() },
+    });
   } else if (intent === "deleteSlide") {
     await prisma.slide.deleteMany({ where: { id: formData.get("slideId") } });
+    await prisma.carousel.update({
+      where: { id: params.id },
+      data: { updatedAt: new Date() },
+    });
   }
 
   return { success: true };

@@ -64,18 +64,19 @@
     for (const embed of embeds) {
       embed.setAttribute("data-initialized", "true");
       const shop = embed.getAttribute("data-shop");
+      const name = embed.getAttribute("data-carousel-name");
 
       if (shop) {
-        await discoverAndSelectCarousel(shop, embed);
+        await discoverAndSelectCarousel(shop, name, embed);
       } else {
         embed.innerHTML = `<div style="text-align: center; padding: 2rem; color: #9ca3af; font-family: sans-serif; font-size: 13px;">Shop domain missing</div>`;
       }
     }
   }
 
-  async function discoverAndSelectCarousel(shop, container) {
+  async function discoverAndSelectCarousel(shop, name, container) {
     try {
-      const response = await fetch(`${API_HOST}/api/carousels?shop=${shop}&_t=${Date.now()}`);
+      const response = await fetch(`${API_HOST}/api/carousels?shop=${shop}&name=${encodeURIComponent(name || "")}&_t=${Date.now()}`);
       if (!response.ok) throw new Error("Failed to fetch carousels list");
       const carousels = await response.json();
 
@@ -138,8 +139,13 @@
     // Attach event listeners and interactions
     if (design === 4) {
       setupStackedDeck(container);
-    } else if (design !== 5) {
-      setupStandardSlider(container, design, navigation, layout);
+    } else {
+      if (design === 2) {
+        setupFloatingCards(container, layout);
+      }
+      if (design !== 5) {
+        setupStandardSlider(container, design, navigation, layout);
+      }
     }
   }
 
@@ -151,11 +157,12 @@
 
     let slidesHtml = slides.map((slide, index) => {
       let cardStyle = "";
+      let rotationAttr = "";
       if (design === 2) {
         // Floating cards initial offsets
         const rotations = ["-1deg", "1deg", "-0.5deg", "1.5deg"];
         const rot = rotations[index % rotations.length];
-        cardStyle = `transform: rotate(${rot});`;
+        rotationAttr = `data-rotation="${rot}"`;
       }
 
       if (layout.cardWidth) {
@@ -163,7 +170,7 @@
       }
 
       return `
-        <div class="cc-slide flex-shrink-0 bg-white border border-gray-100 shadow-sm transition-all duration-300 ${cardShapeClass} p-4 flex flex-col justify-between" style="${cardStyle}">
+        <div class="cc-slide flex-shrink-0 bg-white border border-gray-100 shadow-sm transition-all duration-300 ${cardShapeClass} p-4 flex flex-col justify-between" ${rotationAttr} style="${cardStyle}">
           <div>
             <div class="aspect-[4/5] w-full overflow-hidden ${cardShapeClass === 'rounded-full' ? 'rounded-full' : 'rounded-lg'} bg-gray-50 mb-4">
               ${slide.imageUrl ? `<img src="${slide.imageUrl}" alt="${slide.title || ''}" class="w-full h-full object-cover" loading="lazy" />` : `<div class="w-full h-full flex items-center justify-center bg-gray-100 text-gray-300">No Image</div>`}
@@ -422,6 +429,28 @@
           topCard.style.transition = "transform 0.3s ease, opacity 0.3s ease";
         }, 50);
       }, 250);
+    });
+  }
+
+  function setupFloatingCards(container, layout) {
+    const cards = container.querySelectorAll(".cc-slide");
+    const yOffset = layout.yOffset || -14;
+    
+    cards.forEach((card) => {
+      const rot = card.getAttribute("data-rotation") || "0deg";
+      
+      // Set initial state
+      card.style.transform = `rotate(${rot})`;
+      
+      card.addEventListener("mouseenter", () => {
+        card.style.transform = `translateY(${yOffset}px) scale(1.03) rotate(${rot})`;
+        card.style.boxShadow = "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)";
+      });
+      
+      card.addEventListener("mouseleave", () => {
+        card.style.transform = `rotate(${rot})`;
+        card.style.boxShadow = "0 8px 32px -8px rgba(0,0,0,0.12)";
+      });
     });
   }
 })();
