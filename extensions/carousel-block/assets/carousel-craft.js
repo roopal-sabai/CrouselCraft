@@ -583,6 +583,53 @@
       });
     });
 
+    // Gestures (Touch Swipe + Mouse Drag)
+    let startX = 0;
+    let isDragging = false;
+
+    const handleStart = (clientX) => {
+      startX = clientX;
+      isDragging = true;
+    };
+
+    const handleMove = (clientX) => {
+      if (!isDragging) return;
+      const diffX = clientX - startX;
+      if (Math.abs(diffX) > 60) {
+        isDragging = false;
+        if (diffX > 0) {
+          currentIndex = (currentIndex - 1 + cards.length) % cards.length;
+        } else {
+          currentIndex = (currentIndex + 1) % cards.length;
+        }
+        update();
+      }
+    };
+
+    const handleEnd = () => {
+      isDragging = false;
+    };
+
+    stage.addEventListener("touchstart", (e) => {
+      handleStart(e.touches[0].clientX);
+    }, { passive: true });
+
+    stage.addEventListener("touchmove", (e) => {
+      handleMove(e.touches[0].clientX);
+    }, { passive: true });
+
+    stage.addEventListener("touchend", handleEnd);
+
+    stage.addEventListener("mousedown", (e) => {
+      handleStart(e.clientX);
+    });
+
+    window.addEventListener("mousemove", (e) => {
+      handleMove(e.clientX);
+    });
+
+    window.addEventListener("mouseup", handleEnd);
+
     update();
   }
 })();
