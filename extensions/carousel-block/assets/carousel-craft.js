@@ -88,6 +88,8 @@
   }
 
   function renderPlanLock(container, templateName, requiredTier) {
+    const shop = container.getAttribute("data-shop") || "";
+    const upgradeUrl = shop ? `https://${shop}/admin/apps/carouselcraft` : "#";
     const tierName = requiredTier === "pro" ? "Pro ($49/mo)" : "Elite ($99/mo)";
     container.innerHTML = `
       <div style="border: 2px dashed #f43f5e; border-radius: 16px; padding: 3rem 2rem; text-align: center; color: #1f2937; font-family: sans-serif; background: #fff5f5; max-width: 600px; margin: 2rem auto; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05);">
@@ -97,7 +99,7 @@
           The <strong>${templateName}</strong> template requires the <strong>${tierName}</strong> plan. 
           Please upgrade your subscription plan in the CarouselCraft app dashboard to unlock this design on your storefront.
         </p>
-        <a href="/admin/apps/carouselcraft" target="_parent" style="display: inline-block; background-color: #e11d48; color: #ffffff; font-size: 13px; font-weight: 700; padding: 0.75rem 1.5rem; border-radius: 8px; text-decoration: none; transition: background 0.2s;">
+        <a href="${upgradeUrl}" target="_blank" style="display: inline-block; background-color: #e11d48; color: #ffffff; font-size: 13px; font-weight: 700; padding: 0.75rem 1.5rem; border-radius: 8px; text-decoration: none; transition: background 0.2s;">
           Upgrade Subscription
         </a>
       </div>
