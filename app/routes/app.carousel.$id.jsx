@@ -517,7 +517,7 @@ export default function CarouselEditor() {
     <div className="flex h-screen bg-[#F4F4F5] font-sans overflow-hidden">
 
       {/* ── Sidebar ── */}
-      <div className="w-[380px] bg-white border-r border-gray-200 flex flex-col h-full z-10 flex-shrink-0">
+      <div className={`w-full md:w-[380px] bg-white border-r border-gray-200 flex flex-col h-full z-10 flex-shrink-0 ${activeTab === "preview" ? "hidden md:flex" : "flex"}`}>
 
         {/* Header */}
         <div className="px-4 py-3 border-b border-gray-100 flex items-center gap-3">
@@ -546,11 +546,12 @@ export default function CarouselEditor() {
           {[
             { id: "settings", label: "Settings" },
             { id: "slides", label: `Slides (${carousel.slides.length})` },
+            { id: "preview", label: "Preview", className: "md:hidden" },
           ].map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex-1 py-3 text-sm font-semibold transition-colors ${activeTab === tab.id
+              className={`${tab.className || ""} flex-1 py-3 text-sm font-semibold transition-colors ${activeTab === tab.id
                   ? "border-b-2 border-gray-900 text-gray-900 bg-white"
                   : "text-gray-400 hover:text-gray-700"
                 }`}
@@ -807,7 +808,7 @@ export default function CarouselEditor() {
       </div>
 
       {/* ── Live Preview ── */}
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className={`flex-1 flex flex-col overflow-hidden ${activeTab === "preview" ? "flex" : "hidden md:flex"}`}>
 
         {/* Preview toolbar */}
         <div className="flex items-center justify-center py-3 border-b border-gray-200 bg-white gap-1">

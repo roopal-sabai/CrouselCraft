@@ -472,7 +472,7 @@
              style="width: ${cardWidth}px; transform-style: preserve-3d; transition: transform 0.4s cubic-bezier(0.25, 0.8, 0.25, 1), opacity 0.4s ease, filter 0.4s ease;" 
              data-index="${index}">
           <div class="shadow-lg" style="border-radius: ${borderRadius}px; height: 360px; position: relative; overflow: hidden; background-color: #111827;">
-            ${slide.imageUrl ? `<img src="${slide.imageUrl}" alt="${slide.title || ''}" class="w-full h-full object-cover" style="width: 100%; height: 100%; object-fit: cover; display: block;" />` : `<div class="w-full h-full flex items-center justify-center text-gray-600 text-sm">No Image</div>`}
+            ${slide.imageUrl ? `<img src="${slide.imageUrl}" alt="${slide.title || ''}" class="w-full h-full object-cover" style="width: 100%; height: 100%; object-fit: cover; display: block;" draggable="false" />` : `<div class="w-full h-full flex items-center justify-center text-gray-600 text-sm">No Image</div>`}
             <div class="cc-coverflow-info" style="position: absolute; left: 0; right: 0; bottom: 0; padding: 1.25rem; background: linear-gradient(to top, rgba(0,0,0,0.85) 0%, transparent 65%); z-index: 10; display: flex; flex-direction: column; justify-content: flex-end;">
               <h3 class="text-white font-bold text-lg leading-tight mb-1" style="color: #ffffff; margin-bottom: 4px; font-weight: 700; font-size: 1.125rem;">${slide.title || 'Untitled'}</h3>
               ${slide.buttonText ? `<a href="${slide.linkUrl || '#'}" class="mt-2 inline-block bg-white text-gray-900 text-xs font-bold px-4 py-2 rounded-lg hover:bg-gray-100 transition-colors w-fit cc-btn" style="background-color: #ffffff; color: #111827; display: inline-block; font-size: 0.75rem; font-weight: 700; padding: 0.5rem 1rem; border-radius: 0.5rem; text-decoration: none; width: fit-content; text-align: center;">${slide.buttonText}</a>` : ''}
@@ -550,11 +550,20 @@
       });
     };
 
+    // Prevent default browser image dragging inside stage
+    stage.addEventListener("dragstart", (e) => {
+      e.preventDefault();
+    });
+
     // Attach click listeners to cards
     cards.forEach((card, idx) => {
-      card.addEventListener("click", () => {
-        currentIndex = idx;
-        update();
+      card.addEventListener("click", (e) => {
+        if (idx !== currentIndex) {
+          e.preventDefault();
+          e.stopPropagation();
+          currentIndex = idx;
+          update();
+        }
       });
     });
 
@@ -620,15 +629,23 @@
 
     stage.addEventListener("touchend", handleEnd);
 
+    // Mouse drag interaction
     stage.addEventListener("mousedown", (e) => {
       handleStart(e.clientX);
-    });
 
-    window.addEventListener("mousemove", (e) => {
-      handleMove(e.clientX);
-    });
+      const onMouseMove = (moveEvent) => {
+        handleMove(moveEvent.clientX);
+      };
 
-    window.addEventListener("mouseup", handleEnd);
+      const onMouseUp = () => {
+        handleEnd();
+        window.removeEventListener("mousemove", onMouseMove);
+        window.removeEventListener("mouseup", onMouseUp);
+      };
+
+      window.addEventListener("mousemove", onMouseMove);
+      window.addEventListener("mouseup", onMouseUp);
+    });
 
     update();
   }
