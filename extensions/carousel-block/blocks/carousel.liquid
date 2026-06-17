@@ -1,4 +1,125 @@
-<div class="carousel-craft-embed" data-shop="{{ shop.permanent_domain }}" data-carousel-name="{% if block.settings.carousel_name != blank %}{{ block.settings.carousel_name | escape }}{% else %}{{ section.settings.carousel_name | escape }}{% endif %}">
+{%- assign source = block.settings.carousel_source | default: section.settings.carousel_source | default: "database" -%}
+
+{%- if source == "customizer" -%}
+  {%- assign slides_json = "[" -%}
+  {%- assign first_slide = true -%}
+  
+  {%- comment -%} Slide 1 {%- endcomment -%}
+  {%- assign img_1 = block.settings.slide_1_image | default: section.settings.slide_1_image -%}
+  {%- assign title_1 = block.settings.slide_1_title | default: section.settings.slide_1_title -%}
+  {%- if img_1 != blank or title_1 != blank -%}
+    {%- capture slide_1 -%}
+      {
+        "id": "slide1",
+        "imageUrl": {% if img_1 != blank %}"{{ img_1 | image_url: width: 800 }}"{% else %}""{% endif %},
+        "title": "{{ title_1 | escape }}",
+        "description": "{{ block.settings.slide_1_description | default: section.settings.slide_1_description | escape }}",
+        "buttonText": "{{ block.settings.slide_1_button_text | default: section.settings.slide_1_button_text | escape }}",
+        "linkUrl": "{{ block.settings.slide_1_link_url | default: section.settings.slide_1_link_url | default: "#" }}"
+      }
+    {%- endcapture -%}
+    {%- assign slides_json = slides_json | append: slide_1 -%}
+    {%- assign first_slide = false -%}
+  {%- endif -%}
+
+  {%- comment -%} Slide 2 {%- endcomment -%}
+  {%- assign img_2 = block.settings.slide_2_image | default: section.settings.slide_2_image -%}
+  {%- assign title_2 = block.settings.slide_2_title | default: section.settings.slide_2_title -%}
+  {%- if img_2 != blank or title_2 != blank -%}
+    {%- capture slide_2 -%}
+      {
+        "id": "slide2",
+        "imageUrl": {% if img_2 != blank %}"{{ img_2 | image_url: width: 800 }}"{% else %}""{% endif %},
+        "title": "{{ title_2 | escape }}",
+        "description": "{{ block.settings.slide_2_description | default: section.settings.slide_2_description | escape }}",
+        "buttonText": "{{ block.settings.slide_2_button_text | default: section.settings.slide_2_button_text | escape }}",
+        "linkUrl": "{{ block.settings.slide_2_link_url | default: section.settings.slide_2_link_url | default: "#" }}"
+      }
+    {%- endcapture -%}
+    {%- if first_slide == false -%}{%- assign slides_json = slides_json | append: "," -%}{%- endif -%}
+    {%- assign slides_json = slides_json | append: slide_2 -%}
+    {%- assign first_slide = false -%}
+  {%- endif -%}
+
+  {%- comment -%} Slide 3 {%- endcomment -%}
+  {%- assign img_3 = block.settings.slide_3_image | default: section.settings.slide_3_image -%}
+  {%- assign title_3 = block.settings.slide_3_title | default: section.settings.slide_3_title -%}
+  {%- if img_3 != blank or title_3 != blank -%}
+    {%- capture slide_3 -%}
+      {
+        "id": "slide3",
+        "imageUrl": {% if img_3 != blank %}"{{ img_3 | image_url: width: 800 }}"{% else %}""{% endif %},
+        "title": "{{ title_3 | escape }}",
+        "description": "{{ block.settings.slide_3_description | default: section.settings.slide_3_description | escape }}",
+        "buttonText": "{{ block.settings.slide_3_button_text | default: section.settings.slide_3_button_text | escape }}",
+        "linkUrl": "{{ block.settings.slide_3_link_url | default: section.settings.slide_3_link_url | default: "#" }}"
+      }
+    {%- endcapture -%}
+    {%- if first_slide == false -%}{%- assign slides_json = slides_json | append: "," -%}{%- endif -%}
+    {%- assign slides_json = slides_json | append: slide_3 -%}
+    {%- assign first_slide = false -%}
+  {%- endif -%}
+
+  {%- comment -%} Slide 4 {%- endcomment -%}
+  {%- assign img_4 = block.settings.slide_4_image | default: section.settings.slide_4_image -%}
+  {%- assign title_4 = block.settings.slide_4_title | default: section.settings.slide_4_title -%}
+  {%- if img_4 != blank or title_4 != blank -%}
+    {%- capture slide_4 -%}
+      {
+        "id": "slide4",
+        "imageUrl": {% if img_4 != blank %}"{{ img_4 | image_url: width: 800 }}"{% else %}""{% endif %},
+        "title": "{{ title_4 | escape }}",
+        "description": "{{ block.settings.slide_4_description | default: section.settings.slide_4_description | escape }}",
+        "buttonText": "{{ block.settings.slide_4_button_text | default: section.settings.slide_4_button_text | escape }}",
+        "linkUrl": "{{ block.settings.slide_4_link_url | default: section.settings.slide_4_link_url | default: "#" }}"
+      }
+    {%- endcapture -%}
+    {%- if first_slide == false -%}{%- assign slides_json = slides_json | append: "," -%}{%- endif -%}
+    {%- assign slides_json = slides_json | append: slide_4 -%}
+    {%- assign first_slide = false -%}
+  {%- endif -%}
+
+  {%- assign slides_json = slides_json | append: "]" -%}
+
+  {%- assign design_setting = block.settings.design | default: section.settings.design | default: "3" -%}
+  {%- assign design_num = design_setting | plus: 0 -%}
+  {%- assign center_scale_raw = block.settings.center_scale | default: section.settings.center_scale | default: 112 -%}
+  {%- assign center_scale_val = center_scale_raw | times: 1.0 | divided_by: 100.0 -%}
+  
+  {%- capture settings_json -%}
+    {
+      "design": {{ design_num }},
+      "appearance": {
+        "backgroundColor": "{{ block.settings.background_color | default: section.settings.background_color | default: '#ffffff' }}",
+        "borderRadius": {{ block.settings.border_radius | default: section.settings.border_radius | default: 16 }},
+        "fontFamily": "Inter"
+      },
+      "layout": {
+        "visibleCards": {{ block.settings.visible_cards | default: section.settings.visible_cards | default: 3 }},
+        "gap": {{ block.settings.gap | default: section.settings.gap | default: 24 }},
+        "rotationAngle": {{ block.settings.rotation_angle | default: section.settings.rotation_angle | default: 42 }},
+        "centerScale": {{ center_scale_val }},
+        "depthSpacing": {{ block.settings.depth_spacing | default: section.settings.depth_spacing | default: 200 }},
+        "cardWidth": {{ block.settings.card_width | default: section.settings.card_width | default: 300 }},
+        "showReflection": {{ block.settings.show_reflection | default: section.settings.show_reflection | default: false }}
+      },
+      "navigation": {
+        "arrows": {{ block.settings.arrows | default: section.settings.arrows | default: false }},
+        "dots": {{ block.settings.dots | default: section.settings.dots | default: false }},
+        "autoplay": {{ block.settings.autoplay | default: section.settings.autoplay | default: false }}
+      }
+    }
+  {%- endcapture -%}
+{%- endif -%}
+
+<div class="carousel-craft-embed" 
+     data-shop="{{ shop.permanent_domain }}" 
+     data-carousel-source="{{ source }}"
+     data-carousel-name="{% if block.settings.carousel_name != blank %}{{ block.settings.carousel_name | escape }}{% else %}{{ section.settings.carousel_name | escape }}{% endif %}"
+     {% if source == "customizer" %}
+     data-customizer-slides='{{ slides_json }}'
+     data-customizer-settings='{{ settings_json }}'
+     {% endif %}>
   <!-- Loading state -->
   <div class="carousel-craft-loading" style="text-align: center; padding: 2rem 0; color: #9ca3af; font-family: sans-serif;">
     Loading Carousel...
@@ -13,10 +134,241 @@
   "javascript": "carousel-craft.js",
   "settings": [
     {
+      "type": "select",
+      "id": "carousel_source",
+      "label": "Carousel Source",
+      "options": [
+        { "value": "database", "label": "App Database (Fetch by Name)" },
+        { "value": "customizer", "label": "Theme Customizer (Add Slides Below)" }
+      ],
+      "default": "database"
+    },
+    {
       "type": "text",
       "id": "carousel_name",
       "label": "Carousel Name",
-      "info": "Optional: Type the name of the carousel you want to display (e.g., 'Floating Cards Carousel'). If left blank, the most recently edited active carousel will show automatically."
+      "info": "Used for App Database source lookup. If left blank, the most recently edited active carousel will show automatically."
+    },
+    {
+      "type": "header",
+      "content": "Customizer Design & Layout",
+      "info": "These settings apply when source is set to Theme Customizer."
+    },
+    {
+      "type": "select",
+      "id": "design",
+      "label": "Layout Template",
+      "options": [
+        { "value": "1", "label": "Classic Slider" },
+        { "value": "2", "label": "Floating Cards" },
+        { "value": "3", "label": "Coverflow 3D" },
+        { "value": "4", "label": "Stacked Story" },
+        { "value": "5", "label": "Infinite Marquee" },
+        { "value": "6", "label": "3D Showcase" }
+      ],
+      "default": "3"
+    },
+    {
+      "type": "color",
+      "id": "background_color",
+      "label": "Background Color",
+      "default": "#ffffff"
+    },
+    {
+      "type": "range",
+      "id": "border_radius",
+      "min": 0,
+      "max": 48,
+      "step": 4,
+      "unit": "px",
+      "label": "Border Radius",
+      "default": 16
+    },
+    {
+      "type": "range",
+      "id": "card_width",
+      "min": 200,
+      "max": 440,
+      "step": 10,
+      "unit": "px",
+      "label": "Card Width",
+      "default": 300
+    },
+    {
+      "type": "range",
+      "id": "rotation_angle",
+      "min": 0,
+      "max": 60,
+      "step": 2,
+      "unit": "°",
+      "label": "Rotation Angle (Coverflow 3D)",
+      "default": 42
+    },
+    {
+      "type": "range",
+      "id": "center_scale",
+      "min": 100,
+      "max": 130,
+      "step": 1,
+      "unit": "%",
+      "label": "Center Card Scale (Coverflow 3D)",
+      "default": 112
+    },
+    {
+      "type": "range",
+      "id": "depth_spacing",
+      "min": 100,
+      "max": 320,
+      "step": 10,
+      "unit": "px",
+      "label": "Depth Spacing (Coverflow 3D)",
+      "default": 200
+    },
+    {
+      "type": "checkbox",
+      "id": "show_reflection",
+      "label": "Show Mirror Reflection",
+      "default": true
+    },
+    {
+      "type": "checkbox",
+      "id": "arrows",
+      "label": "Show Arrow Buttons",
+      "default": true
+    },
+    {
+      "type": "checkbox",
+      "id": "dots",
+      "label": "Show Dot Indicators",
+      "default": true
+    },
+    {
+      "type": "checkbox",
+      "id": "autoplay",
+      "label": "Autoplay",
+      "default": false
+    },
+    {
+      "type": "header",
+      "content": "Slide 1"
+    },
+    {
+      "type": "image_picker",
+      "id": "slide_1_image",
+      "label": "Slide 1 Image"
+    },
+    {
+      "type": "text",
+      "id": "slide_1_title",
+      "label": "Slide 1 Title",
+      "default": "Slide 1"
+    },
+    {
+      "type": "textarea",
+      "id": "slide_1_description",
+      "label": "Slide 1 Description",
+      "default": "Describe your product here."
+    },
+    {
+      "type": "text",
+      "id": "slide_1_button_text",
+      "label": "Slide 1 Button Text",
+      "default": "Shop Now"
+    },
+    {
+      "type": "url",
+      "id": "slide_1_link_url",
+      "label": "Slide 1 Redirect URL"
+    },
+    {
+      "type": "header",
+      "content": "Slide 2"
+    },
+    {
+      "type": "image_picker",
+      "id": "slide_2_image",
+      "label": "Slide 2 Image"
+    },
+    {
+      "type": "text",
+      "id": "slide_2_title",
+      "label": "Slide 2 Title"
+    },
+    {
+      "type": "textarea",
+      "id": "slide_2_description",
+      "label": "Slide 2 Description"
+    },
+    {
+      "type": "text",
+      "id": "slide_2_button_text",
+      "label": "Slide 2 Button Text",
+      "default": "Shop Now"
+    },
+    {
+      "type": "url",
+      "id": "slide_2_link_url",
+      "label": "Slide 2 Redirect URL"
+    },
+    {
+      "type": "header",
+      "content": "Slide 3"
+    },
+    {
+      "type": "image_picker",
+      "id": "slide_3_image",
+      "label": "Slide 3 Image"
+    },
+    {
+      "type": "text",
+      "id": "slide_3_title",
+      "label": "Slide 3 Title"
+    },
+    {
+      "type": "textarea",
+      "id": "slide_3_description",
+      "label": "Slide 3 Description"
+    },
+    {
+      "type": "text",
+      "id": "slide_3_button_text",
+      "label": "Slide 3 Button Text",
+      "default": "Shop Now"
+    },
+    {
+      "type": "url",
+      "id": "slide_3_link_url",
+      "label": "Slide 3 Redirect URL"
+    },
+    {
+      "type": "header",
+      "content": "Slide 4"
+    },
+    {
+      "type": "image_picker",
+      "id": "slide_4_image",
+      "label": "Slide 4 Image"
+    },
+    {
+      "type": "text",
+      "id": "slide_4_title",
+      "label": "Slide 4 Title"
+    },
+    {
+      "type": "textarea",
+      "id": "slide_4_description",
+      "label": "Slide 4 Description"
+    },
+    {
+      "type": "text",
+      "id": "slide_4_button_text",
+      "label": "Slide 4 Button Text",
+      "default": "Shop Now"
+    },
+    {
+      "type": "url",
+      "id": "slide_4_link_url",
+      "label": "Slide 4 Redirect URL"
     }
   ]
 }

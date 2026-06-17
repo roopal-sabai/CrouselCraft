@@ -64,12 +64,45 @@
     for (const embed of embeds) {
       embed.setAttribute("data-initialized", "true");
       const shop = embed.getAttribute("data-shop");
+      const source = embed.getAttribute("data-carousel-source") || "database";
       const name = embed.getAttribute("data-carousel-name");
 
-      if (shop) {
-        await discoverAndSelectCarousel(shop, name, embed);
+      if (source === "customizer") {
+        try {
+          const slidesData = JSON.parse(embed.getAttribute("data-customizer-slides") || "[]");
+          const settingsData = JSON.parse(embed.getAttribute("data-customizer-settings") || "{}");
+          
+          if (slidesData.length === 0) {
+            embed.innerHTML = `
+              <div style="border: 2px dashed #e5e7eb; border-radius: 12px; padding: 2rem; text-align: center; color: #6b7280; font-family: sans-serif; background: #f9fafb;">
+                <p style="margin: 0 0 0.5rem 0; font-weight: 600; font-size: 14px;">No Slides Added Yet</p>
+                <p style="margin: 0; font-size: 12px; color: #9ca3af;">Click "Add slide" inside the Theme Customizer sidebar to add your first slide.</p>
+              </div>
+            `;
+            continue;
+          }
+
+          const carouselData = {
+            id: "customizer-" + Date.now(),
+            name: "Customizer Carousel",
+            design: settingsData.design || 3,
+            appearance: settingsData.appearance || {},
+            layout: settingsData.layout || {},
+            navigation: settingsData.navigation || {},
+            slides: slidesData
+          };
+
+          renderCarousel(carouselData, embed);
+        } catch (err) {
+          console.error("[CarouselCraft] Failed to parse customizer data:", err);
+          embed.innerHTML = `<div style="text-align: center; padding: 2rem; color: #9ca3af; font-family: sans-serif; font-size: 13px;">Error rendering Customizer carousel</div>`;
+        }
       } else {
-        embed.innerHTML = `<div style="text-align: center; padding: 2rem; color: #9ca3af; font-family: sans-serif; font-size: 13px;">Shop domain missing</div>`;
+        if (shop) {
+          await discoverAndSelectCarousel(shop, name, embed);
+        } else {
+          embed.innerHTML = `<div style="text-align: center; padding: 2rem; color: #9ca3af; font-family: sans-serif; font-size: 13px;">Shop domain missing</div>`;
+        }
       }
     }
   }
