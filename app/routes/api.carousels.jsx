@@ -21,6 +21,12 @@ export const loader = async ({ request }) => {
   }
 
   try {
+    const shopRecord = await prisma.shop.findUnique({
+      where: { shop: shop }
+    });
+    const plan = shopRecord?.subscriptionPlan || "free";
+    headers["X-Shop-Plan"] = plan;
+
     let carousels = [];
 
     // 1. Try to find the specific carousel by name if provided

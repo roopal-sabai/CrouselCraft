@@ -59,6 +59,51 @@
   }
 
 
+  async function checkPlanAccess(shop, designNum) {
+    try {
+      const response = await fetch(`${API_HOST}/api/carousels?shop=${shop}&_t=${Date.now()}`);
+      const plan = response.headers.get("X-Shop-Plan") || "free";
+      
+      const tmpl = [
+        { id: 1, tier: "free", name: "Classic Slider" },
+        { id: 2, tier: "pro", name: "Floating Cards" },
+        { id: 3, tier: "pro", name: "Coverflow 3D" },
+        { id: 4, tier: "elite", name: "Stacked Story" },
+        { id: 5, tier: "elite", name: "Infinite Marquee" },
+        { id: 6, tier: "elite", name: "3D Showcase" }
+      ].find(t => t.id === designNum);
+
+      if (!tmpl) return { allowed: true };
+      
+      const isAllowed = 
+        (plan === "elite" || plan === "premium") ||
+        (plan === "pro" && (tmpl.tier === "pro" || tmpl.tier === "free")) ||
+        (tmpl.tier === "free");
+
+      return { allowed: isAllowed, requiredTier: tmpl.tier, templateName: tmpl.name, currentPlan: plan };
+    } catch (e) {
+      console.error("[CarouselCraft] Plan check failed:", e);
+      return { allowed: true };
+    }
+  }
+
+  function renderPlanLock(container, templateName, requiredTier) {
+    const tierName = requiredTier === "pro" ? "Pro ($49/mo)" : "Elite ($99/mo)";
+    container.innerHTML = `
+      <div style="border: 2px dashed #f43f5e; border-radius: 16px; padding: 3rem 2rem; text-align: center; color: #1f2937; font-family: sans-serif; background: #fff5f5; max-width: 600px; margin: 2rem auto; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05);">
+        <div style="font-size: 40px; margin-bottom: 1rem;">🔒</div>
+        <h3 style="margin: 0 0 0.5rem 0; font-weight: 800; font-size: 18px; color: #e11d48;">Template Locked</h3>
+        <p style="margin: 0 0 1.5rem 0; font-size: 14px; color: #4b5563; line-height: 1.5;">
+          The <strong>${templateName}</strong> template requires the <strong>${tierName}</strong> plan. 
+          Please upgrade your subscription plan in the CarouselCraft app dashboard to unlock this design on your storefront.
+        </p>
+        <a href="/admin/apps/carouselcraft" target="_parent" style="display: inline-block; background-color: #e11d48; color: #ffffff; font-size: 13px; font-weight: 700; padding: 0.75rem 1.5rem; border-radius: 8px; text-decoration: none; transition: background 0.2s;">
+          Upgrade Subscription
+        </a>
+      </div>
+    `;
+  }
+
   async function initCarousels() {
     const embeds = document.querySelectorAll(".carousel-craft-embed:not([data-initialized])");
     for (const embed of embeds) {
@@ -82,10 +127,19 @@
             continue;
           }
 
+          const designNum = settingsData.design || 3;
+          
+          // Verify plan access asynchronously
+          const planCheck = await checkPlanAccess(shop, designNum);
+          if (!planCheck.allowed) {
+            renderPlanLock(embed, planCheck.templateName, planCheck.requiredTier);
+            continue;
+          }
+
           const carouselData = {
             id: "customizer-" + Date.now(),
             name: "Customizer Carousel",
-            design: settingsData.design || 3,
+            design: designNum,
             appearance: settingsData.appearance || {},
             layout: settingsData.layout || {},
             navigation: settingsData.navigation || {},
@@ -112,6 +166,7 @@
       const response = await fetch(`${API_HOST}/api/carousels?shop=${shop}&name=${encodeURIComponent(name || "")}&_t=${Date.now()}`);
       if (!response.ok) throw new Error("Failed to fetch carousels list");
       const carousels = await response.json();
+      const plan = response.headers.get("X-Shop-Plan") || "free";
 
       if (!carousels || carousels.length === 0) {
         container.innerHTML = `
@@ -124,6 +179,27 @@
       }
 
       const selectedCarousel = carousels[0];
+
+      // Enforce plan check for database source
+      const tmpl = [
+        { id: 1, tier: "free", name: "Classic Slider" },
+        { id: 2, tier: "pro", name: "Floating Cards" },
+        { id: 3, tier: "pro", name: "Coverflow 3D" },
+        { id: 4, tier: "elite", name: "Stacked Story" },
+        { id: 5, tier: "elite", name: "Infinite Marquee" },
+        { id: 6, tier: "elite", name: "3D Showcase" }
+      ].find(t => t.id === selectedCarousel.design);
+
+      const isAllowed = !tmpl || 
+        (plan === "elite" || plan === "premium") ||
+        (plan === "pro" && (tmpl.tier === "pro" || tmpl.tier === "free")) ||
+        (tmpl.tier === "free");
+
+      if (!isAllowed) {
+        renderPlanLock(container, tmpl.name, tmpl.tier);
+        return;
+      }
+
       renderCarousel(selectedCarousel, container);
     } catch (error) {
       console.error("[CarouselCraft Discovery Error]", error);
