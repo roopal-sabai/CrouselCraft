@@ -810,6 +810,23 @@ export default function CarouselEditor() {
       {/* ── Live Preview ── */}
       <div className={`flex-1 flex flex-col overflow-hidden ${activeTab === "preview" ? "flex" : "hidden md:flex"}`}>
 
+        {/* Mobile back to edit bar */}
+        <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 bg-white md:hidden">
+          <button
+            onClick={() => setActiveTab("settings")}
+            className="flex items-center gap-1.5 text-sm font-semibold text-gray-700 hover:text-gray-900 bg-transparent border-0 cursor-pointer"
+          >
+            <ChevronLeft className="w-5 h-5" /> Back to Edit
+          </button>
+          <button
+            onClick={handleSave}
+            disabled={isSaving}
+            className="bg-gray-900 text-white px-4 py-1.5 rounded-lg hover:bg-black transition-colors font-semibold text-xs disabled:opacity-50"
+          >
+            {isSaving ? "Saving..." : "Save"}
+          </button>
+        </div>
+
         {/* Preview toolbar */}
         <div className="flex items-center justify-center py-3 border-b border-gray-200 bg-white gap-1">
           {[
