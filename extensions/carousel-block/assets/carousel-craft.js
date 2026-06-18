@@ -126,24 +126,15 @@
     for (const embed of embeds) {
       embed.setAttribute("data-initialized", "true");
       const shop = embed.getAttribute("data-shop");
+      const name = embed.getAttribute("data-carousel-name");
 
       try {
         const slidesData = JSON.parse(embed.getAttribute("data-customizer-slides") || "[]");
         const settingsData = JSON.parse(embed.getAttribute("data-customizer-settings") || "{}");
-        
-        if (slidesData.length === 0) {
-          embed.innerHTML = `
-            <div style="border: 2px dashed #e5e7eb; border-radius: 12px; padding: 2rem; text-align: center; color: #6b7280; font-family: sans-serif; background: #f9fafb;">
-              <p style="margin: 0 0 0.5rem 0; font-weight: 600; font-size: 14px;">No Slides Added Yet</p>
-              <p style="margin: 0; font-size: 12px; color: #9ca3af;">Click "Add slide" inside the Theme Customizer sidebar to add your first slide.</p>
-            </div>
-          `;
-          continue;
-        }
-
         const designNum = parseInt(settingsData.design || 3, 10);
-        
-        const carouselData = {
+
+        // Prepare initial customizer data
+        let carouselData = {
           id: "customizer-" + Date.now(),
           name: "Customizer Carousel",
           design: designNum,
@@ -153,7 +144,74 @@
           slides: slidesData
         };
 
+        // Render instantly with customizer settings/placeholders first
         renderCarousel(carouselData, embed);
+
+        // If a database carousel lookup is requested, fetch and merge in the background
+        if (name && name.trim()) {
+          fetch(`${API_HOST}/api/carousels?shop=${shop}&name=${encodeURIComponent(name.trim())}&_t=${Date.now()}`)
+            .then(res => {
+              if (!res.ok) throw new Error("Failed to fetch database carousel");
+              return res.json();
+            })
+            .then(carousels => {
+              if (carousels && carousels.length > 0) {
+                const dbCarousel = carousels[0];
+                
+                // Parse DB configurations
+                const dbDesign = parseInt(dbCarousel.design, 10) || 3;
+                const dbAppearance = typeof dbCarousel.appearance === "string" ? JSON.parse(dbCarousel.appearance) : dbCarousel.appearance || {};
+                const dbLayout = typeof dbCarousel.layout === "string" ? JSON.parse(dbCarousel.layout) : dbCarousel.layout || {};
+                const dbNavigation = typeof dbCarousel.navigation === "string" ? JSON.parse(dbCarousel.navigation) : dbCarousel.navigation || {};
+                const dbSlides = dbCarousel.slides || [];
+
+                // Smart Merge Slides: Customizer takes priority over Database
+                const mergedSlides = [];
+                const maxSlides = Math.max(dbSlides.length, slidesData.length);
+                for (let i = 0; i < maxSlides; i++) {
+                  const customizerSlide = slidesData[i];
+                  const dbSlide = dbSlides[i];
+                  
+                  const isCustomizerDefined = customizerSlide && (customizerSlide.title || customizerSlide.imageUrl);
+                  
+                  if (isCustomizerDefined) {
+                    mergedSlides.push(customizerSlide);
+                  } else if (dbSlide) {
+                    mergedSlides.push({
+                      id: dbSlide.id || `db-${i}`,
+                      imageUrl: dbSlide.imageUrl || "",
+                      title: dbSlide.title || "",
+                      description: dbSlide.description || "",
+                      buttonText: dbSlide.buttonText || "",
+                      linkUrl: dbSlide.linkUrl || "#"
+                    });
+                  }
+                }
+
+                // Merge settings (Customizer overrides database values)
+                const mergedDesign = settingsData.design !== undefined ? parseInt(settingsData.design, 10) : dbDesign;
+                const mergedAppearance = { ...dbAppearance, ...(settingsData.appearance || {}) };
+                const mergedLayout = { ...dbLayout, ...(settingsData.layout || {}) };
+                const mergedNavigation = { ...dbNavigation, ...(settingsData.navigation || {}) };
+
+                const finalCarouselData = {
+                  id: dbCarousel.id || carouselData.id,
+                  name: dbCarousel.name || carouselData.name,
+                  design: mergedDesign,
+                  appearance: mergedAppearance,
+                  layout: mergedLayout,
+                  navigation: mergedNavigation,
+                  slides: mergedSlides
+                };
+
+                // Re-render with merged data
+                renderCarousel(finalCarouselData, embed);
+              }
+            })
+            .catch(err => {
+              console.warn("[CarouselCraft] Failed to merge database carousel:", err);
+            });
+        }
 
         // Verify plan access asynchronously in the background to prevent blocking UI rendering
         checkPlanAccess(shop, designNum).then((planCheck) => {

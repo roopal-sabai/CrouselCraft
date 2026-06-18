@@ -67,6 +67,7 @@
 <div class="carousel-craft-embed" 
      style="max-width: {{ max_w }}px; margin: 0 auto;"
      data-shop="{{ shop.permanent_domain }}" 
+     data-carousel-name="{% if block.settings.carousel_name != blank %}{{ block.settings.carousel_name | escape }}{% else %}{{ section.settings.carousel_name | escape }}{% endif %}"
      data-customizer-settings='{{ settings_json }}'
      data-customizer-slides='{{ slides_json }}'>
   <!-- Loading state -->
@@ -82,6 +83,12 @@
   "stylesheet": "carousel-craft.css",
   "javascript": "carousel-craft.js",
   "settings": [
+    {
+      "type": "text",
+      "id": "carousel_name",
+      "label": "Lookup App Carousel by Name",
+      "info": "Enter the name of a carousel created in the app dashboard to load its slides. Leave blank to manage slides entirely in the Customizer."
+    },
     {
       "type": "header",
       "content": "Layout & Design Settings"
