@@ -143,13 +143,6 @@
 
         const designNum = parseInt(settingsData.design || 3, 10);
         
-        // Verify plan access asynchronously
-        const planCheck = await checkPlanAccess(shop, designNum);
-        if (!planCheck.allowed) {
-          renderPlanLock(embed, planCheck.templateName, planCheck.requiredTier);
-          continue;
-        }
-
         const carouselData = {
           id: "customizer-" + Date.now(),
           name: "Customizer Carousel",
@@ -161,6 +154,15 @@
         };
 
         renderCarousel(carouselData, embed);
+
+        // Verify plan access asynchronously in the background to prevent blocking UI rendering
+        checkPlanAccess(shop, designNum).then((planCheck) => {
+          if (planCheck && !planCheck.allowed) {
+            renderPlanLock(embed, planCheck.templateName, planCheck.requiredTier);
+          }
+        }).catch((err) => {
+          console.warn("[CarouselCraft] Deferred plan check failed:", err);
+        });
       } catch (err) {
         console.error("[CarouselCraft] Failed to parse customizer data:", err);
         embed.innerHTML = `<div style="text-align: center; padding: 2rem; color: #9ca3af; font-family: sans-serif; font-size: 13px;">Error rendering Customizer carousel</div>`;
