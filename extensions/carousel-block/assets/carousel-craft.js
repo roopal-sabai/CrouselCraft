@@ -126,146 +126,45 @@
     for (const embed of embeds) {
       embed.setAttribute("data-initialized", "true");
       const shop = embed.getAttribute("data-shop");
-      const source = embed.getAttribute("data-carousel-source") || "database";
-      const name = embed.getAttribute("data-carousel-name");
 
-      if (source === "customizer") {
-        try {
-          const slidesData = JSON.parse(embed.getAttribute("data-customizer-slides") || "[]");
-          const settingsData = JSON.parse(embed.getAttribute("data-customizer-settings") || "{}");
-          
-          if (slidesData.length === 0) {
-            embed.innerHTML = `
-              <div style="border: 2px dashed #e5e7eb; border-radius: 12px; padding: 2rem; text-align: center; color: #6b7280; font-family: sans-serif; background: #f9fafb;">
-                <p style="margin: 0 0 0.5rem 0; font-weight: 600; font-size: 14px;">No Slides Added Yet</p>
-                <p style="margin: 0; font-size: 12px; color: #9ca3af;">Click "Add slide" inside the Theme Customizer sidebar to add your first slide.</p>
-              </div>
-            `;
-            continue;
-          }
-
-          const designNum = parseInt(settingsData.design || 3, 10);
-          
-          // Verify plan access asynchronously
-          const planCheck = await checkPlanAccess(shop, designNum);
-          if (!planCheck.allowed) {
-            renderPlanLock(embed, planCheck.templateName, planCheck.requiredTier);
-            continue;
-          }
-
-          const carouselData = {
-            id: "customizer-" + Date.now(),
-            name: "Customizer Carousel",
-            design: designNum,
-            appearance: settingsData.appearance || {},
-            layout: settingsData.layout || {},
-            navigation: settingsData.navigation || {},
-            slides: slidesData
-          };
-
-          renderCarousel(carouselData, embed);
-        } catch (err) {
-          console.error("[CarouselCraft] Failed to parse customizer data:", err);
-          embed.innerHTML = `<div style="text-align: center; padding: 2rem; color: #9ca3af; font-family: sans-serif; font-size: 13px;">Error rendering Customizer carousel</div>`;
-        }
-      } else {
-        if (shop) {
-          await discoverAndSelectCarousel(shop, name, embed);
-        } else {
-          embed.innerHTML = `<div style="text-align: center; padding: 2rem; color: #9ca3af; font-family: sans-serif; font-size: 13px;">Shop domain missing</div>`;
-        }
-      }
-    }
-  }
-
-  async function discoverAndSelectCarousel(shop, name, container) {
-    if (!name || !name.trim()) {
-      container.innerHTML = `
-        <div style="border: 1px dashed #d1d5db; border-radius: 12px; padding: 2rem; text-align: center; color: #4b5563; font-family: sans-serif; background: #f9fafb; max-width: 500px; margin: 1.5rem auto;">
-          <p style="margin: 0 0 0.25rem 0; font-weight: 700; font-size: 14px; color: #111827;">App Database Source Selected</p>
-          <p style="margin: 0; font-size: 12px; color: #6b7280;">Enter the name of your carousel in the <strong>Lookup Carousel by Name</strong> field to display your database slides.</p>
-        </div>
-      `;
-      return;
-    }
-
-    try {
-      const response = await fetch(`${API_HOST}/api/carousels?shop=${shop}&name=${encodeURIComponent(name || "")}&_t=${Date.now()}`);
-      if (!response.ok) throw new Error("Failed to fetch carousels list");
-      const carousels = await response.json();
-      const plan = response.headers.get("X-Shop-Plan") || "free";
-
-      if (!carousels || carousels.length === 0) {
-        container.innerHTML = `
-          <div style="border: 1px dashed #d1d5db; border-radius: 12px; padding: 2rem; text-align: center; color: #4b5563; font-family: sans-serif; background: #f9fafb; max-width: 500px; margin: 1.5rem auto;">
-            <p style="margin: 0 0 0.25rem 0; font-weight: 700; font-size: 14px; color: #111827;">Carousel Not Found</p>
-            <p style="margin: 0; font-size: 12px; color: #6b7280;">No active database carousel named "<strong>${name}</strong>" was found. Please check the spelling or publish it in your CarouselCraft dashboard.</p>
-          </div>
-        `;
-        return;
-      }
-
-      const selectedCarousel = carousels[0];
-      if (selectedCarousel) {
-        selectedCarousel.design = parseInt(selectedCarousel.design, 10);
-      }
-
-      // Smart Merge: override database settings with Customizer settings
       try {
-        const customizerSettings = JSON.parse(container.getAttribute("data-customizer-settings") || "{}");
-        if (customizerSettings && Object.keys(customizerSettings).length > 0) {
-          if (customizerSettings.design !== undefined) {
-            selectedCarousel.design = parseInt(customizerSettings.design, 10);
-          }
-          if (customizerSettings.appearance) {
-            selectedCarousel.appearance = {
-              ...(selectedCarousel.appearance || {}),
-              ...customizerSettings.appearance
-            };
-          }
-          if (customizerSettings.layout) {
-            selectedCarousel.layout = {
-              ...(selectedCarousel.layout || {}),
-              ...customizerSettings.layout
-            };
-          }
-          if (customizerSettings.navigation) {
-            selectedCarousel.navigation = {
-              ...(selectedCarousel.navigation || {}),
-              ...customizerSettings.navigation
-            };
-          }
+        const slidesData = JSON.parse(embed.getAttribute("data-customizer-slides") || "[]");
+        const settingsData = JSON.parse(embed.getAttribute("data-customizer-settings") || "{}");
+        
+        if (slidesData.length === 0) {
+          embed.innerHTML = `
+            <div style="border: 2px dashed #e5e7eb; border-radius: 12px; padding: 2rem; text-align: center; color: #6b7280; font-family: sans-serif; background: #f9fafb;">
+              <p style="margin: 0 0 0.5rem 0; font-weight: 600; font-size: 14px;">No Slides Added Yet</p>
+              <p style="margin: 0; font-size: 12px; color: #9ca3af;">Click "Add slide" inside the Theme Customizer sidebar to add your first slide.</p>
+            </div>
+          `;
+          continue;
         }
+
+        const designNum = parseInt(settingsData.design || 3, 10);
+        
+        // Verify plan access asynchronously
+        const planCheck = await checkPlanAccess(shop, designNum);
+        if (!planCheck.allowed) {
+          renderPlanLock(embed, planCheck.templateName, planCheck.requiredTier);
+          continue;
+        }
+
+        const carouselData = {
+          id: "customizer-" + Date.now(),
+          name: "Customizer Carousel",
+          design: designNum,
+          appearance: settingsData.appearance || {},
+          layout: settingsData.layout || {},
+          navigation: settingsData.navigation || {},
+          slides: slidesData
+        };
+
+        renderCarousel(carouselData, embed);
       } catch (err) {
-        console.error("[CarouselCraft] Failed to apply Customizer overrides to database carousel:", err);
+        console.error("[CarouselCraft] Failed to parse customizer data:", err);
+        embed.innerHTML = `<div style="text-align: center; padding: 2rem; color: #9ca3af; font-family: sans-serif; font-size: 13px;">Error rendering Customizer carousel</div>`;
       }
-
-
-
-      // Enforce plan check for database source
-      const tmpl = [
-        { id: 1, tier: "free", name: "Classic Slider" },
-        { id: 2, tier: "pro", name: "Floating Cards" },
-        { id: 3, tier: "pro", name: "Coverflow 3D" },
-        { id: 4, tier: "elite", name: "Stacked Story" },
-        { id: 5, tier: "elite", name: "Infinite Marquee" },
-        { id: 6, tier: "elite", name: "3D Showcase" }
-      ].find(t => t.id === selectedCarousel.design);
-
-      const isAllowed = !tmpl || 
-        (plan === "elite" || plan === "premium") ||
-        (plan === "pro" && (tmpl.tier === "pro" || tmpl.tier === "free")) ||
-        (tmpl.tier === "free");
-
-      if (!isAllowed) {
-        renderPlanLock(container, tmpl.name, tmpl.tier);
-        return;
-      }
-
-      renderCarousel(selectedCarousel, container);
-    } catch (error) {
-      console.error("[CarouselCraft Discovery Error]", error);
-      container.innerHTML = `<div style="text-align: center; padding: 2rem; color: #9ca3af; font-family: sans-serif; font-size: 13px;">Failed to load carousel showcase</div>`;
     }
   }
 

@@ -1,41 +1,37 @@
-{%- assign source = block.settings.carousel_source | default: section.settings.carousel_source | default: "database" -%}
+{%- assign slides_json = "[" -%}
+{%- assign first_slide = true -%}
 
-{%- if source == "customizer" -%}
-  {%- assign slides_json = "[" -%}
-  {%- assign first_slide = true -%}
-  
-  {%- for i in (1..12) -%}
-    {%- assign img_key = "slide_" | append: i | append: "_image" -%}
-    {%- assign title_key = "slide_" | append: i | append: "_title" -%}
-    {%- assign desc_key = "slide_" | append: i | append: "_description" -%}
-    {%- assign btn_key = "slide_" | append: i | append: "_button_text" -%}
-    {%- assign link_key = "slide_" | append: i | append: "_link_url" -%}
+{%- for i in (1..12) -%}
+  {%- assign img_key = "slide_" | append: i | append: "_image" -%}
+  {%- assign title_key = "slide_" | append: i | append: "_title" -%}
+  {%- assign desc_key = "slide_" | append: i | append: "_description" -%}
+  {%- assign btn_key = "slide_" | append: i | append: "_button_text" -%}
+  {%- assign link_key = "slide_" | append: i | append: "_link_url" -%}
 
-    {%- assign img = block.settings[img_key] | default: section.settings[img_key] -%}
-    {%- assign title = block.settings[title_key] | default: section.settings[title_key] -%}
-    {%- assign desc = block.settings[desc_key] | default: section.settings[desc_key] -%}
-    {%- assign btn = block.settings[btn_key] | default: section.settings[btn_key] -%}
-    {%- assign link = block.settings[link_key] | default: section.settings[link_key] -%}
+  {%- assign img = block.settings[img_key] | default: section.settings[img_key] -%}
+  {%- assign title = block.settings[title_key] | default: section.settings[title_key] -%}
+  {%- assign desc = block.settings[desc_key] | default: section.settings[desc_key] -%}
+  {%- assign btn = block.settings[btn_key] | default: section.settings[btn_key] -%}
+  {%- assign link = block.settings[link_key] | default: section.settings[link_key] -%}
 
-    {%- if img != blank or title != blank -%}
-      {%- capture slide_item -%}
-        {
-          "id": "slide{{ i }}",
-          "imageUrl": {% if img != blank %}"{{ img | image_url: width: 800 }}"{% else %}""{% endif %},
-          "title": "{{ title | escape }}",
-          "description": "{{ desc | escape }}",
-          "buttonText": "{{ btn | escape }}",
-          "linkUrl": "{{ link | default: "#" }}"
-        }
-      {%- endcapture -%}
-      {%- if first_slide == false -%}{%- assign slides_json = slides_json | append: "," -%}{%- endif -%}
-      {%- assign slides_json = slides_json | append: slide_item -%}
-      {%- assign first_slide = false -%}
-    {%- endif -%}
-  {%- endfor -%}
+  {%- if img != blank or title != blank -%}
+    {%- capture slide_item -%}
+      {
+        "id": "slide{{ i }}",
+        "imageUrl": {% if img != blank %}"{{ img | image_url: width: 800 }}"{% else %}""{% endif %},
+        "title": "{{ title | escape }}",
+        "description": "{{ desc | escape }}",
+        "buttonText": "{{ btn | escape }}",
+        "linkUrl": "{{ link | default: "#" }}"
+      }
+    {%- endcapture -%}
+    {%- if first_slide == false -%}{%- assign slides_json = slides_json | append: "," -%}{%- endif -%}
+    {%- assign slides_json = slides_json | append: slide_item -%}
+    {%- assign first_slide = false -%}
+  {%- endif -%}
+{%- endfor -%}
 
-  {%- assign slides_json = slides_json | append: "]" -%}
-{%- endif -%}
+{%- assign slides_json = slides_json | append: "]" -%}
 
 {%- assign design_setting = block.settings.design | default: section.settings.design | default: "3" -%}
 {%- assign design_num = design_setting | plus: 0 -%}
@@ -71,12 +67,8 @@
 <div class="carousel-craft-embed" 
      style="max-width: {{ max_w }}px; margin: 0 auto;"
      data-shop="{{ shop.permanent_domain }}" 
-     data-carousel-source="{{ source }}"
-     data-carousel-name="{% if block.settings.carousel_name != blank %}{{ block.settings.carousel_name | escape }}{% else %}{{ section.settings.carousel_name | escape }}{% endif %}"
      data-customizer-settings='{{ settings_json }}'
-     {% if source == "customizer" %}
-     data-customizer-slides='{{ slides_json }}'
-     {% endif %}>
+     data-customizer-slides='{{ slides_json }}'>
   <!-- Loading state -->
   <div class="carousel-craft-loading" style="text-align: center; padding: 2rem 0; color: #9ca3af; font-family: sans-serif;">
     Loading Carousel...
@@ -91,30 +83,8 @@
   "javascript": "carousel-craft.js",
   "settings": [
     {
-      "type": "select",
-      "id": "carousel_source",
-      "label": "Carousel Source",
-      "options": [
-        { "value": "database", "label": "App Database (Fetch by Name)" },
-        { "value": "customizer", "label": "Theme Customizer (Add Slides Below)" }
-      ],
-      "default": "database"
-    },
-    {
-      "type": "text",
-      "id": "carousel_name",
-      "label": "Lookup Carousel by Name",
-      "info": "Enter the exact name of the carousel created in your App Dashboard (e.g., 'Floating Cards Carousel'). If left blank, the most recently edited active carousel will load automatically."
-    },
-    {
       "type": "header",
-      "content": "💡 PRO-TIP: Unlimited Slides",
-      "info": "To add as many slides as you want, select 'App Database' under 'Carousel Source' above, and manage your slides dynamically inside the CarouselCraft app admin dashboard."
-    },
-    {
-      "type": "header",
-      "content": "Customizer Design & Layout",
-      "info": "These settings apply to Customizer slides, and will override App Database values if specified."
+      "content": "Layout & Design Settings"
     },
     {
       "type": "select",
