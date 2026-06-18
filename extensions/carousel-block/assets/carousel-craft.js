@@ -30,6 +30,18 @@
   document.addEventListener("shopify:section:load", initCarousels);
   document.addEventListener("shopify:block:select", initCarousels);
 
+  // Prevent all link redirects inside the Shopify Theme Editor (designMode) to avoid iframe crash/navigation
+  document.addEventListener("click", (e) => {
+    if (window.Shopify && window.Shopify.designMode) {
+      const embedLink = e.target.closest(".carousel-craft-embed a");
+      if (embedLink) {
+        e.preventDefault();
+        e.stopPropagation();
+        console.log("[CarouselCraft] Blocked navigation in Shopify designMode for link:", embedLink.href);
+      }
+    }
+  }, true);
+
   // Set up MutationObserver to automatically initialize any newly inserted embeds
   if (typeof MutationObserver !== "undefined") {
     const observer = new MutationObserver((mutations) => {
