@@ -351,17 +351,17 @@
                ${rotationAttr} 
                style="${cardStyle} border-radius: ${borderRadiusVal}px; box-shadow: 0 8px 32px -8px rgba(0,0,0,0.12);">
             <div class="cc-accent-bar" style="background: ${accent};"></div>
-            <div class="p-4 flex flex-col justify-between flex-1">
+            <div class="p-5 flex flex-col justify-between flex-1">
               <div>
                 <div class="aspect-[4/5] w-full overflow-hidden bg-gray-50 mb-4 relative" style="border-radius: ${Math.max(0, borderRadiusVal - 4)}px;">
                   ${slide.imageUrl ? `<img src="${slide.imageUrl}" alt="${slide.title || ''}" class="w-full h-full object-cover" loading="lazy" />` : `<div class="w-full h-full flex items-center justify-center bg-gray-100 text-gray-300">No Image</div>`}
                   <div class="cc-number-badge">${String(index + 1).padStart(2, "0")}</div>
                 </div>
-                <h3 class="font-bold text-gray-900 text-base mb-1 line-clamp-1">${slide.title || 'Untitled'}</h3>
-                <p class="text-gray-500 text-xs line-clamp-3 leading-relaxed mb-4">${slide.description || ''}</p>
+                <h3 class="font-bold text-gray-900 text-lg mb-1.5 line-clamp-1">${slide.title || 'Untitled'}</h3>
+                <p class="text-gray-500 text-sm line-clamp-3 leading-relaxed mb-4">${slide.description || ''}</p>
               </div>
               ${slide.buttonText ? `
-                <a href="${slide.linkUrl || '#'}" class="cc-btn text-center block w-full py-2 px-4 rounded-xl font-bold text-xs text-white transition-all hover:opacity-90" style="background: ${accent}; color: #ffffff !important;">
+                <a href="${slide.linkUrl || '#'}" class="cc-btn text-center block w-full py-2.5 px-4 rounded-xl font-bold text-sm text-white transition-all hover:opacity-90" style="background: ${accent}; color: #ffffff !important;">
                   ${slide.buttonText}
                 </a>
               ` : ''}
@@ -371,16 +371,16 @@
       }
 
       return `
-        <div class="cc-slide flex-shrink-0 bg-white border border-gray-100 shadow-sm transition-all duration-300 ${cardShapeClass} p-4 flex flex-col justify-between" ${rotationAttr} style="${cardStyle}">
+        <div class="cc-slide flex-shrink-0 bg-white border border-gray-100 shadow-md hover:shadow-xl transition-all duration-300 ${cardShapeClass} p-5 flex flex-col justify-between" ${rotationAttr} style="${cardStyle}">
           <div>
             <div class="aspect-[4/5] w-full overflow-hidden ${cardShapeClass === 'rounded-full' ? 'rounded-full' : 'rounded-lg'} bg-gray-50 mb-4">
               ${slide.imageUrl ? `<img src="${slide.imageUrl}" alt="${slide.title || ''}" class="w-full h-full object-cover" loading="lazy" />` : `<div class="w-full h-full flex items-center justify-center bg-gray-100 text-gray-300">No Image</div>`}
             </div>
-            <h3 class="font-bold text-gray-900 text-base mb-1">${slide.title || 'Untitled'}</h3>
-            <p class="text-gray-500 text-xs line-clamp-2 leading-relaxed mb-4">${slide.description || ''}</p>
+            <h3 class="font-bold text-gray-900 text-lg mb-1 line-clamp-1">${slide.title || 'Untitled'}</h3>
+            <p class="text-gray-500 text-sm line-clamp-2 leading-relaxed mb-4">${slide.description || ''}</p>
           </div>
           ${slide.buttonText ? `
-            <a href="${slide.linkUrl || '#'}" class="cc-btn text-center block w-full py-2 px-4 rounded-lg font-bold text-xs transition-all ${
+            <a href="${slide.linkUrl || '#'}" class="cc-btn text-center block w-full py-2.5 px-4 rounded-lg font-bold text-sm transition-all ${
               buttonStyle === 'outline' ? 'border border-gray-900 text-gray-900 hover:bg-gray-50' : 
               buttonStyle === 'glass' ? 'bg-gray-100/80 backdrop-blur text-gray-900 hover:bg-gray-200/80' : 
               'bg-gray-900 text-white hover:bg-black'

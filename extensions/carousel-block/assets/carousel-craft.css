@@ -462,3 +462,30 @@
   opacity: 0.9 !important;
 }
 
+/* Infinite Marquee hover overlay */
+.cc-marquee-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 1.25rem;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  z-index: 10;
+  pointer-events: none;
+}
+.cc-marquee-item:hover .cc-marquee-overlay {
+  opacity: 1 !important;
+}
+.cc-marquee-overlay .cc-btn {
+  pointer-events: auto;
+}
+.cc-marquee-item img {
+  transition: transform 0.5s ease !important;
+}
+.cc-marquee-item:hover img {
+  transform: scale(1.05) !important;
+}
+
+
