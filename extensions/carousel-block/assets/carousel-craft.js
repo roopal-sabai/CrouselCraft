@@ -32,13 +32,17 @@
 
   // Prevent all link redirects inside the Shopify Theme Editor (designMode) to avoid iframe crash/navigation
   document.addEventListener("click", (e) => {
-    if (window.Shopify && window.Shopify.designMode) {
-      const embedLink = e.target.closest(".carousel-craft-embed a");
-      if (embedLink) {
-        e.preventDefault();
-        e.stopPropagation();
-        console.log("[CarouselCraft] Blocked navigation in Shopify designMode for link:", embedLink.href);
+    try {
+      if (window.Shopify && window.Shopify.designMode && e.target && typeof e.target.closest === "function") {
+        const embedLink = e.target.closest(".carousel-craft-embed a");
+        if (embedLink) {
+          e.preventDefault();
+          e.stopPropagation();
+          console.log("[CarouselCraft] Blocked navigation in Shopify designMode for link:", embedLink.href);
+        }
       }
+    } catch (err) {
+      console.error("[CarouselCraft] Click interceptor error:", err);
     }
   }, true);
 
