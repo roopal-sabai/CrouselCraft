@@ -90,17 +90,16 @@
   function renderPlanLock(container, templateName, requiredTier) {
     const shop = container.getAttribute("data-shop") || "";
     const upgradeUrl = shop ? `https://${shop}/admin/apps/carouselcraft` : "#";
-    const tierName = requiredTier === "pro" ? "Pro ($49/mo)" : "Elite ($99/mo)";
+    const tierName = requiredTier === "pro" ? "Pro" : "Elite";
     container.innerHTML = `
-      <div style="border: 2px dashed #f43f5e; border-radius: 16px; padding: 3rem 2rem; text-align: center; color: #1f2937; font-family: sans-serif; background: #fff5f5; max-width: 600px; margin: 2rem auto; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05);">
-        <div style="font-size: 40px; margin-bottom: 1rem;">🔒</div>
-        <h3 style="margin: 0 0 0.5rem 0; font-weight: 800; font-size: 18px; color: #e11d48;">Template Locked</h3>
-        <p style="margin: 0 0 1.5rem 0; font-size: 14px; color: #4b5563; line-height: 1.5;">
-          The <strong>${templateName}</strong> template requires the <strong>${tierName}</strong> plan. 
-          Please upgrade your subscription plan in the CarouselCraft app dashboard to unlock this design on your storefront.
+      <div style="border: 1px solid #e5e7eb; border-radius: 12px; padding: 2rem; text-align: center; color: #1f2937; font-family: sans-serif; background: #ffffff; max-width: 480px; margin: 1.5rem auto; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);">
+        <div style="font-size: 24px; margin-bottom: 0.75rem;">🔒</div>
+        <h3 style="margin: 0 0 0.25rem 0; font-weight: 700; font-size: 15px; color: #111827;">Template Locked</h3>
+        <p style="margin: 0 0 1.25rem 0; font-size: 12px; color: #6b7280; line-height: 1.4;">
+          The <strong>${templateName}</strong> layout requires the <strong>${tierName}</strong> plan. Please upgrade your subscription inside the app dashboard to unlock this design.
         </p>
-        <a href="${upgradeUrl}" target="_blank" style="display: inline-block; background-color: #e11d48; color: #ffffff; font-size: 13px; font-weight: 700; padding: 0.75rem 1.5rem; border-radius: 8px; text-decoration: none; transition: background 0.2s;">
-          Upgrade Subscription
+        <a href="${upgradeUrl}" target="_blank" style="display: inline-block; background-color: #111827; color: #ffffff; font-size: 12px; font-weight: 600; padding: 0.625rem 1.25rem; border-radius: 6px; text-decoration: none; transition: background 0.15s;">
+          Upgrade Plan
         </a>
       </div>
     `;
@@ -164,6 +163,16 @@
   }
 
   async function discoverAndSelectCarousel(shop, name, container) {
+    if (!name || !name.trim()) {
+      container.innerHTML = `
+        <div style="border: 1px dashed #d1d5db; border-radius: 12px; padding: 2rem; text-align: center; color: #4b5563; font-family: sans-serif; background: #f9fafb; max-width: 500px; margin: 1.5rem auto;">
+          <p style="margin: 0 0 0.25rem 0; font-weight: 700; font-size: 14px; color: #111827;">App Database Source Selected</p>
+          <p style="margin: 0; font-size: 12px; color: #6b7280;">Enter the name of your carousel in the <strong>Lookup Carousel by Name</strong> field to display your database slides.</p>
+        </div>
+      `;
+      return;
+    }
+
     try {
       const response = await fetch(`${API_HOST}/api/carousels?shop=${shop}&name=${encodeURIComponent(name || "")}&_t=${Date.now()}`);
       if (!response.ok) throw new Error("Failed to fetch carousels list");
@@ -172,9 +181,9 @@
 
       if (!carousels || carousels.length === 0) {
         container.innerHTML = `
-          <div style="border: 2px dashed #e5e7eb; border-radius: 12px; padding: 2rem; text-align: center; color: #6b7280; font-family: sans-serif; background: #f9fafb;">
-            <p style="margin: 0 0 0.5rem 0; font-weight: 600; font-size: 14px;">No Carousels Found</p>
-            <p style="margin: 0; font-size: 12px; color: #9ca3af;">Open the CarouselCraft App to create your first catalog showcase.</p>
+          <div style="border: 1px dashed #d1d5db; border-radius: 12px; padding: 2rem; text-align: center; color: #4b5563; font-family: sans-serif; background: #f9fafb; max-width: 500px; margin: 1.5rem auto;">
+            <p style="margin: 0 0 0.25rem 0; font-weight: 700; font-size: 14px; color: #111827;">Carousel Not Found</p>
+            <p style="margin: 0; font-size: 12px; color: #6b7280;">No active database carousel named "<strong>${name}</strong>" was found. Please check the spelling or publish it in your CarouselCraft dashboard.</p>
           </div>
         `;
         return;
