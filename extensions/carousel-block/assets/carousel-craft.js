@@ -278,8 +278,11 @@
     } else if (design === 3) {
       // Coverflow 3D
       html = renderCoverflow(slides, appearance, layout, navigation);
+    } else if (design === 6) {
+      // 3D Showcase Hero
+      html = renderShowcase3D(slides, appearance, layout, navigation);
     } else {
-      // Standard / Classic / Floating / 3D Showcase
+      // Standard / Classic / Floating
       html = renderSlider(slides, design, appearance, layout, navigation);
     }
 
@@ -290,6 +293,8 @@
       setupStackedDeck(container);
     } else if (design === 3) {
       setupCoverflow(container, layout, navigation);
+    } else if (design === 6) {
+      setupShowcase3D(container, layout);
     } else {
       if (design === 2) {
         setupFloatingCards(container, layout);
@@ -306,6 +311,14 @@
     const visibleCount = layout.visibleCards || 3;
     const buttonStyle = navigation.buttonStyle || "solid";
 
+    const FLOATING_ACCENTS_GRADIENT = [
+      "linear-gradient(to right, #a78bfa, #6366f1)",
+      "linear-gradient(to right, #fb7185, #ec4899)",
+      "linear-gradient(to right, #fbbf24, #f97316)",
+      "linear-gradient(to right, #2dd4bf, #06b6d4)",
+      "linear-gradient(to right, #34d399, #22c55e)"
+    ];
+
     let slidesHtml = slides.map((slide, index) => {
       let cardStyle = "";
       let rotationAttr = "";
@@ -318,6 +331,34 @@
 
       if (layout.cardWidth) {
         cardStyle += ` width: ${layout.cardWidth}px; min-width: ${layout.cardWidth}px; max-width: 100%;`;
+      }
+
+      if (design === 2) {
+        const accent = FLOATING_ACCENTS_GRADIENT[index % FLOATING_ACCENTS_GRADIENT.length];
+        const borderRadiusVal = appearance.borderRadius || 20;
+
+        return `
+          <div class="cc-slide flex-shrink-0 bg-white transition-all duration-300 overflow-hidden flex flex-col justify-between" 
+               ${rotationAttr} 
+               style="${cardStyle} border-radius: ${borderRadiusVal}px; box-shadow: 0 8px 32px -8px rgba(0,0,0,0.12);">
+            <div class="cc-accent-bar" style="background: ${accent};"></div>
+            <div class="p-4 flex flex-col justify-between flex-1">
+              <div>
+                <div class="aspect-[4/5] w-full overflow-hidden bg-gray-50 mb-4 relative" style="border-radius: ${Math.max(0, borderRadiusVal - 4)}px;">
+                  ${slide.imageUrl ? `<img src="${slide.imageUrl}" alt="${slide.title || ''}" class="w-full h-full object-cover" loading="lazy" />` : `<div class="w-full h-full flex items-center justify-center bg-gray-100 text-gray-300">No Image</div>`}
+                  <div class="cc-number-badge">${String(index + 1).padStart(2, "0")}</div>
+                </div>
+                <h3 class="font-bold text-gray-900 text-base mb-1 line-clamp-1">${slide.title || 'Untitled'}</h3>
+                <p class="text-gray-500 text-xs line-clamp-3 leading-relaxed mb-4">${slide.description || ''}</p>
+              </div>
+              ${slide.buttonText ? `
+                <a href="${slide.linkUrl || '#'}" class="cc-btn text-center block w-full py-2 px-4 rounded-xl font-bold text-xs text-white transition-all hover:opacity-90" style="background: ${accent}; color: #ffffff !important;">
+                  ${slide.buttonText}
+                </a>
+              ` : ''}
+            </div>
+          </div>
+        `;
       }
 
       return `
@@ -363,19 +404,27 @@
   function renderMarquee(slides, appearance, layout, navigation) {
     const cardWidth = layout.cardWidth || 280;
     const speed = layout.marqueeSpeed === "fast" ? "12s" : layout.marqueeSpeed === "slow" ? "32s" : "20s";
-    const cardShapeClass = layout.cardShape === "rounded" ? "rounded-xl" : "rounded-none";
     const borderRadius = appearance.borderRadius || 16;
 
     // Duplicate slides to ensure seamless loop
     const doubledSlides = [...slides, ...slides, ...slides, ...slides];
 
     let itemsHtml = doubledSlides.map((slide) => `
-      <div class="cc-marquee-item flex-shrink-0 bg-white border border-gray-100 p-4 shadow-sm mx-3" style="width: ${cardWidth}px; border-radius: ${borderRadius}px;">
-        <div class="aspect-square w-full overflow-hidden bg-gray-50 mb-3" style="border-radius: ${borderRadius - 4}px;">
-          ${slide.imageUrl ? `<img src="${slide.imageUrl}" alt="" class="w-full h-full object-cover" loading="lazy" />` : ""}
+      <div class="cc-marquee-item flex-shrink-0 bg-white border border-gray-100 p-4 shadow-sm mx-3 relative group" style="width: ${cardWidth}px; border-radius: ${borderRadius}px; overflow: hidden; height: 380px;">
+        <div class="w-full h-full overflow-hidden bg-gray-50 relative" style="border-radius: ${borderRadius - 4}px;">
+          ${slide.imageUrl ? `<img src="${slide.imageUrl}" alt="" class="w-full h-full object-cover transition-all duration-500" loading="lazy" />` : ""}
+          <!-- Hover reveal overlay -->
+          <div class="cc-marquee-overlay absolute inset-0 flex flex-col justify-end p-5 opacity-0 transition-opacity duration-300" 
+               style="background: linear-gradient(to top, rgba(0,0,0,0.68) 0%, transparent 55%);">
+            <h3 class="text-white font-bold text-base leading-tight mb-2" style="color: #ffffff !important; margin: 0 0 0.25rem 0;">${slide.title || 'Brand'}</h3>
+            ${slide.description ? `<p class="text-white text-xs line-clamp-1 mb-3" style="color: rgba(255,255,255,0.8) !important; margin: 0 0 0.5rem 0;">${slide.description}</p>` : ''}
+            ${slide.buttonText ? `
+              <a href="${slide.linkUrl || '#'}" class="mt-2 inline-block border border-white text-white text-xs font-semibold px-4 py-1.5 rounded-full hover:bg-white hover:text-gray-900 transition-all cc-btn w-fit" style="border: 1px solid #ffffff; color: #ffffff !important; border-radius: 9999px; padding: 0.375rem 1rem;">
+                ${slide.buttonText}
+              </a>
+            ` : ''}
+          </div>
         </div>
-        <p class="font-bold text-gray-900 text-sm truncate text-center">${slide.title || 'Brand'}</p>
-        ${slide.description ? `<p class="text-gray-500 text-xs line-clamp-1 text-center mt-1">${slide.description}</p>` : ""}
       </div>
     `).join("");
 
@@ -389,8 +438,7 @@
   }
 
   function renderStacked(slides, appearance, layout, navigation) {
-    const cardShapeClass = layout.cardShape === "rounded" ? "rounded-3xl" : "rounded-none";
-    const buttonStyle = navigation.buttonStyle || "solid";
+    const borderRadius = appearance.borderRadius || 24;
 
     let cardsHtml = slides.map((slide, index) => {
       // Calculate stack order (top card is index 0)
@@ -399,25 +447,27 @@
       const opacity = index > 2 ? 0 : 1;
 
       return `
-        <div class="cc-stacked-card absolute w-full max-w-sm bg-white border border-gray-100 shadow-lg p-5 flex flex-col justify-between transition-all duration-300 ${cardShapeClass}" 
-             style="z-index: ${zIndex}; transform: ${transform}; opacity: ${opacity};" 
+        <div class="cc-stacked-card absolute w-full max-w-sm bg-white shadow-lg flex flex-col justify-between transition-all duration-300" 
+             style="z-index: ${zIndex}; transform: ${transform}; opacity: ${opacity}; border-radius: ${borderRadius}px; height: 480px; overflow: hidden;" 
              data-index="${index}">
-          <div>
-            <div class="aspect-[4/5] w-full overflow-hidden rounded-2xl bg-gray-50 mb-4">
-              ${slide.imageUrl ? `<img src="${slide.imageUrl}" alt="" class="w-full h-full object-cover" loading="lazy" />` : ""}
+          <!-- Full-bleed image -->
+          <div class="relative w-full h-full bg-gray-100">
+            ${slide.imageUrl ? `<img src="${slide.imageUrl}" alt="" class="w-full h-full object-cover" loading="lazy" />` : `<div class="w-full h-full flex items-center justify-center text-gray-300">No Image</div>`}
+            
+            <!-- Bottom gradient overlay -->
+            <div class="absolute inset-0" style="background: linear-gradient(to top, rgba(0,0,0,0.72) 0%, rgba(0,0,0,0.0) 48%); z-index: 1;"></div>
+            
+            <!-- Content overlay -->
+            <div class="absolute bottom-0 left-0 right-0 p-6" style="z-index: 2;">
+              <h3 class="text-white font-bold text-xl leading-snug mb-1" style="color: #ffffff !important; margin: 0 0 0.25rem 0;">${slide.title || 'Untitled'}</h3>
+              <p class="text-white text-sm line-clamp-2" style="color: rgba(255,255,255,0.7) !important; margin: 0 0 1rem 0;">${slide.description || ''}</p>
+              ${slide.buttonText ? `
+                <a href="${slide.linkUrl || '#'}" class="mt-3 inline-block bg-white text-gray-900 font-bold text-sm px-5 py-2 rounded-full hover:bg-gray-100 transition-all cc-btn" style="background-color: #ffffff; color: #111827 !important; border-radius: 9999px; width: fit-content; padding: 0.5rem 1.25rem;">
+                  ${slide.buttonText}
+                </a>
+              ` : ''}
             </div>
-            <h3 class="font-extrabold text-gray-900 text-lg mb-1">${slide.title || 'Untitled'}</h3>
-            <p class="text-gray-500 text-sm line-clamp-2 leading-relaxed mb-4">${slide.description || ''}</p>
           </div>
-          ${slide.buttonText ? `
-            <a href="${slide.linkUrl || '#'}" class="cc-btn text-center block w-full py-2.5 px-4 rounded-xl font-bold text-xs transition-all ${
-              buttonStyle === 'outline' ? 'border border-gray-900 text-gray-900 hover:bg-gray-50' : 
-              buttonStyle === 'glass' ? 'bg-gray-100/80 backdrop-blur text-gray-900 hover:bg-gray-200/80' : 
-              'bg-gray-900 text-white hover:bg-black'
-            }">
-              ${slide.buttonText}
-            </a>
-          ` : ''}
         </div>
       `;
     }).join("");
@@ -425,11 +475,133 @@
     return `
       <div class="cc-stacked-container relative flex justify-center items-center h-[520px] w-full max-w-sm mx-auto overflow-hidden cursor-pointer">
         ${cardsHtml}
-        <div class="absolute bottom-2 left-1/2 -translate-x-1/2 bg-black/60 text-white text-[10px] uppercase font-bold tracking-widest px-3 py-1 rounded-full pointer-events-none">
+        <div class="absolute bottom-2 left-1/2 -translate-x-1/2 bg-black/60 text-white text-[10px] uppercase font-bold tracking-widest px-3 py-1 rounded-full pointer-events-none" style="z-index: 10;">
           Click Card to Cycle
         </div>
       </div>
     `;
+  }
+
+  function renderShowcase3D(slides, appearance, layout, navigation) {
+    const layoutSide = layout.layoutSide || "left";
+    const borderRadius = appearance.borderRadius || 24;
+    const buttonStyle = navigation.buttonStyle || "solid";
+
+    const textOrder = layoutSide === "right" ? "order-2" : "order-1";
+    const imageOrder = layoutSide === "right" ? "order-1" : "order-2";
+
+    let slidesHtml = slides.map((slide, index) => {
+      const btnClass = 
+        buttonStyle === 'outline' ? 'border-2 border-gray-900 text-gray-900 bg-transparent hover:bg-gray-900 hover:text-white' : 
+        buttonStyle === 'glass' ? 'bg-white/20 border border-white/30 text-white hover:bg-white/30' : 
+        'bg-gray-900 text-white hover:bg-black';
+
+      return `
+        <div class="cc-3d-slide-item absolute inset-0 flex flex-col md:flex-row items-center gap-12 transition-all duration-500" 
+             style="opacity: ${index === 0 ? '1' : '0'}; pointer-events: ${index === 0 ? 'auto' : 'none'};" 
+             data-index="${index}">
+          <!-- Text side -->
+          <div class="flex-1 ${textOrder}">
+            <div class="text-xs font-bold tracking-widest text-gray-400 uppercase mb-3">
+              ${String(index + 1).padStart(2, "0")} / ${String(slides.length).padStart(2, "0")}
+            </div>
+            <h2 class="text-3xl md:text-4xl font-extrabold text-gray-900 leading-tight mb-4" style="margin: 0 0 1rem 0;">
+              ${slide.title || 'Untitled'}
+            </h2>
+            <p class="text-gray-500 text-base md:text-lg leading-relaxed mb-6">${slide.description || ''}</p>
+            ${slide.buttonText ? `
+              <a href="${slide.linkUrl || '#'}" class="cc-btn inline-block px-8 py-3.5 rounded-xl font-bold text-sm transition-all ${btnClass}" style="width: fit-content;">
+                ${slide.buttonText}
+              </a>
+            ` : ''}
+            
+            <!-- Navigation -->
+            <div class="flex gap-3 mt-8">
+              <button class="cc-3d-prev w-11 h-11 rounded-full border border-gray-200 flex items-center justify-center text-gray-600 hover:border-gray-900 hover:text-gray-900 transition-colors bg-white cursor-pointer" aria-label="Previous">❮</button>
+              <button class="cc-3d-next w-11 h-11 rounded-full bg-gray-900 flex items-center justify-center text-white hover:bg-black transition-colors cursor-pointer" aria-label="Next">❯</button>
+            </div>
+          </div>
+
+          <!-- Image side with tilt container -->
+          <div class="flex-1 relative ${imageOrder} w-full">
+            <div class="absolute -inset-8 rounded-full pointer-events-none opacity-30" 
+                 style="background: radial-gradient(ellipse at center, rgba(139,92,246,0.15) 0%, rgba(59,130,246,0.10) 50%, transparent 75%); filter: blur(32px); z-index: 0;">
+            </div>
+            <div class="cc-3d-tilt-card relative z-10 mx-auto" style="perspective: 1000px; max-width: 400px; width: 100%;">
+              <div class="aspect-[4/5] w-full bg-gray-100 overflow-hidden shadow-xl" style="border-radius: ${borderRadius}px; transform-style: preserve-3d; transition: transform 0.1s ease-out;">
+                ${slide.imageUrl ? `<img src="${slide.imageUrl}" alt="" class="w-full h-full object-cover" draggable="false" />` : `<div class="w-full h-full flex items-center justify-center text-gray-300">No Image</div>`}
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    }).join("");
+
+    return `
+      <div class="cc-3d-showcase-wrapper relative w-full overflow-hidden" style="min-height: 560px; padding: 2rem 0;">
+        ${slidesHtml}
+      </div>
+    `;
+  }
+
+  function setupShowcase3D(container, layout) {
+    const wrapper = container.querySelector(".cc-3d-showcase-wrapper");
+    if (!wrapper) return;
+    const slides = Array.from(wrapper.querySelectorAll(".cc-3d-slide-item"));
+    if (slides.length === 0) return;
+
+    let currentIndex = 0;
+    const tiltStrength = layout.tiltStrength || 12;
+
+    const update = () => {
+      slides.forEach((slide, index) => {
+        if (index === currentIndex) {
+          slide.style.opacity = "1";
+          slide.style.pointerEvents = "auto";
+        } else {
+          slide.style.opacity = "0";
+          slide.style.pointerEvents = "none";
+        }
+      });
+    };
+
+    slides.forEach((slide, index) => {
+      const prevBtn = slide.querySelector(".cc-3d-prev");
+      const nextBtn = slide.querySelector(".cc-3d-next");
+      const tiltCard = slide.querySelector(".cc-3d-tilt-card div");
+
+      if (prevBtn) {
+        prevBtn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          currentIndex = (currentIndex - 1 + slides.length) % slides.length;
+          update();
+        });
+      }
+      if (nextBtn) {
+        nextBtn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          currentIndex = (currentIndex + 1) % slides.length;
+          update();
+        });
+      }
+
+      if (tiltCard) {
+        slide.addEventListener("mousemove", (e) => {
+          const rect = tiltCard.getBoundingClientRect();
+          const cx = rect.left + rect.width / 2;
+          const cy = rect.top + rect.height / 2;
+          const dx = (e.clientX - cx) / (rect.width / 2);
+          const dy = (e.clientY - cy) / (rect.height / 2);
+          const rotY = dx * tiltStrength;
+          const rotX = -dy * tiltStrength;
+          tiltCard.style.transform = `rotateX(${rotX}deg) rotateY(${rotY}deg) scale(1.02)`;
+        });
+
+        slide.addEventListener("mouseleave", () => {
+          tiltCard.style.transform = `rotateX(0deg) rotateY(0deg) scale(1)`;
+        });
+      }
+    });
   }
 
   // --- Handlers & Functionality ---
@@ -552,7 +724,7 @@
     const deck = container.querySelector(".cc-stacked-container");
     if (!deck) return;
 
-    deck.addEventListener("click", () => {
+    const cycleNext = () => {
       const cards = Array.from(deck.querySelectorAll(".cc-stacked-card"));
       if (cards.length <= 1) return;
 
@@ -583,6 +755,42 @@
           topCard.style.transition = "transform 0.3s ease, opacity 0.3s ease";
         }, 50);
       }, 250);
+    };
+
+    deck.addEventListener("click", (e) => {
+      if (e.target.closest("a") || e.target.closest("button") || e.target.classList.contains("cc-btn")) {
+        return; // Let redirect/clicks happen
+      }
+      cycleNext();
+    });
+
+    // Touch Swipe Gesture Support
+    let startY = 0;
+    let startX = 0;
+    let isDragging = false;
+
+    deck.addEventListener("touchstart", (e) => {
+      if (e.target.closest("a") || e.target.closest("button") || e.target.classList.contains("cc-btn")) {
+        return;
+      }
+      startY = e.touches[0].clientY;
+      startX = e.touches[0].clientX;
+      isDragging = true;
+    }, { passive: true });
+
+    deck.addEventListener("touchmove", (e) => {
+      if (!isDragging) return;
+      const diffY = e.touches[0].clientY - startY;
+      const diffX = e.touches[0].clientX - startX;
+      // Trigger card swipe cycle if vertical or horizontal swipe threshold is met
+      if (Math.abs(diffY) > 80 || Math.abs(diffX) > 80) {
+        isDragging = false;
+        cycleNext();
+      }
+    }, { passive: true });
+
+    deck.addEventListener("touchend", () => {
+      isDragging = false;
     });
   }
 
