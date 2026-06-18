@@ -26,7 +26,17 @@ export default function App() {
 
 // Shopify needs React Router to catch some thrown responses, so that their headers are included in the response.
 export function ErrorBoundary() {
-  return boundary.error(useRouteError());
+  const error = useRouteError();
+  try {
+    return boundary.error(error);
+  } catch (e) {
+    return (
+      <div style={{ padding: "2rem", fontFamily: "sans-serif", textAlign: "center" }}>
+        <h1 style={{ color: "#d32f2f" }}>App Error</h1>
+        <p>{error instanceof Error ? error.message : "An unexpected error occurred."}</p>
+      </div>
+    );
+  }
 }
 
 export const headers = (headersArgs) => {

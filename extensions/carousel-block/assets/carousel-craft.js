@@ -129,7 +129,7 @@
             continue;
           }
 
-          const designNum = settingsData.design || 3;
+          const designNum = parseInt(settingsData.design || 3, 10);
           
           // Verify plan access asynchronously
           const planCheck = await checkPlanAccess(shop, designNum);
@@ -181,6 +181,41 @@
       }
 
       const selectedCarousel = carousels[0];
+      if (selectedCarousel) {
+        selectedCarousel.design = parseInt(selectedCarousel.design, 10);
+      }
+
+      // Smart Merge: override database settings with Customizer settings
+      try {
+        const customizerSettings = JSON.parse(container.getAttribute("data-customizer-settings") || "{}");
+        if (customizerSettings && Object.keys(customizerSettings).length > 0) {
+          if (customizerSettings.design !== undefined) {
+            selectedCarousel.design = parseInt(customizerSettings.design, 10);
+          }
+          if (customizerSettings.appearance) {
+            selectedCarousel.appearance = {
+              ...(selectedCarousel.appearance || {}),
+              ...customizerSettings.appearance
+            };
+          }
+          if (customizerSettings.layout) {
+            selectedCarousel.layout = {
+              ...(selectedCarousel.layout || {}),
+              ...customizerSettings.layout
+            };
+          }
+          if (customizerSettings.navigation) {
+            selectedCarousel.navigation = {
+              ...(selectedCarousel.navigation || {}),
+              ...customizerSettings.navigation
+            };
+          }
+        }
+      } catch (err) {
+        console.error("[CarouselCraft] Failed to apply Customizer overrides to database carousel:", err);
+      }
+
+
 
       // Enforce plan check for database source
       const tmpl = [
@@ -576,19 +611,31 @@
   function renderCoverflow(slides, appearance, layout, navigation) {
     const cardWidth = layout.cardWidth || 300;
     const borderRadius = appearance.borderRadius || 16;
+    const showReflection = layout.showReflection !== false;
 
     let slidesHtml = slides.map((slide, index) => {
+      let reflectionHtml = "";
+      if (showReflection) {
+        reflectionHtml = `
+          <div class="cc-coverflow-reflection absolute left-0 right-0 overflow-hidden pointer-events-none" 
+               style="top: 100%; height: 80px; border-radius: 0 0 ${borderRadius}px ${borderRadius}px; transform: scaleY(-1); opacity: ${index === 0 ? '0.18' : '0'}; mask-image: linear-gradient(to bottom, black 0%, transparent 100%); -webkit-mask-image: linear-gradient(to bottom, black 0%, transparent 100%); z-index: 5; transition: opacity 0.4s ease;">
+            ${slide.imageUrl ? `<img src="${slide.imageUrl}" alt="" style="width: 100%; height: 360px; object-fit: cover; object-position: top; display: block;" />` : ''}
+          </div>
+        `;
+      }
+
       return `
         <div class="cc-coverflow-card absolute cursor-pointer" 
-             style="width: ${cardWidth}px; transform-style: preserve-3d; transition: transform 0.4s cubic-bezier(0.25, 0.8, 0.25, 1), opacity 0.4s ease, filter 0.4s ease;" 
+             style="width: ${cardWidth}px; left: calc(50% - ${cardWidth / 2}px); top: calc(50% - 180px); transform-style: preserve-3d; transition: transform 0.4s cubic-bezier(0.25, 0.8, 0.25, 1), opacity 0.4s ease, filter 0.4s ease;" 
              data-index="${index}">
           <div class="shadow-lg" style="border-radius: ${borderRadius}px; height: 360px; position: relative; overflow: hidden; background-color: #111827;">
             ${slide.imageUrl ? `<img src="${slide.imageUrl}" alt="${slide.title || ''}" class="w-full h-full object-cover" style="width: 100%; height: 100%; object-fit: cover; display: block;" draggable="false" />` : `<div class="w-full h-full flex items-center justify-center text-gray-600 text-sm">No Image</div>`}
-            <div class="cc-coverflow-info" style="position: absolute; left: 0; right: 0; bottom: 0; padding: 1.25rem; background: linear-gradient(to top, rgba(0,0,0,0.85) 0%, transparent 65%); z-index: 10; display: flex; flex-direction: column; justify-content: flex-end;">
+            <div class="cc-coverflow-info" style="position: absolute; left: 0; right: 0; bottom: 0; padding: 1.25rem; background: linear-gradient(to top, rgba(0,0,0,0.85) 0%, transparent 65%); z-index: 10; display: flex; flex-direction: column; justify-content: flex-end; opacity: ${index === 0 ? '1' : '0'}; pointer-events: ${index === 0 ? 'auto' : 'none'}; transition: opacity 0.3s ease;">
               <h3 class="text-white font-bold text-lg leading-tight mb-1" style="color: #ffffff; margin-bottom: 4px; font-weight: 700; font-size: 1.125rem;">${slide.title || 'Untitled'}</h3>
               ${slide.buttonText ? `<a href="${slide.linkUrl || '#'}" class="mt-2 inline-block bg-white text-gray-900 text-xs font-bold px-4 py-2 rounded-lg hover:bg-gray-100 transition-colors w-fit cc-btn" style="background-color: #ffffff; color: #111827; display: inline-block; font-size: 0.75rem; font-weight: 700; padding: 0.5rem 1rem; border-radius: 0.5rem; text-decoration: none; width: fit-content; text-align: center;">${slide.buttonText}</a>` : ''}
             </div>
           </div>
+          ${reflectionHtml}
         </div>
       `;
     }).join("");
@@ -652,6 +699,17 @@
         card.style.zIndex = zIndex;
         card.style.opacity = opacity;
         card.style.filter = `brightness(${brightness})`;
+
+        const info = card.querySelector(".cc-coverflow-info");
+        if (info) {
+          info.style.opacity = isActive ? "1" : "0";
+          info.style.pointerEvents = isActive ? "auto" : "none";
+        }
+
+        const reflection = card.querySelector(".cc-coverflow-reflection");
+        if (reflection) {
+          reflection.style.opacity = isActive ? "0.18" : "0";
+        }
       });
 
       // Update dots

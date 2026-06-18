@@ -80,45 +80,45 @@
   {%- endif -%}
 
   {%- assign slides_json = slides_json | append: "]" -%}
-
-  {%- assign design_setting = block.settings.design | default: section.settings.design | default: "3" -%}
-  {%- assign design_num = design_setting | plus: 0 -%}
-  {%- assign center_scale_raw = block.settings.center_scale | default: section.settings.center_scale | default: 112 -%}
-  {%- assign center_scale_val = center_scale_raw | times: 1.0 | divided_by: 100.0 -%}
-  
-  {%- capture settings_json -%}
-    {
-      "design": {{ design_num }},
-      "appearance": {
-        "backgroundColor": "{{ block.settings.background_color | default: section.settings.background_color | default: '#ffffff' }}",
-        "borderRadius": {{ block.settings.border_radius | default: section.settings.border_radius | default: 16 }},
-        "fontFamily": "Inter"
-      },
-      "layout": {
-        "visibleCards": {{ block.settings.visible_cards | default: section.settings.visible_cards | default: 3 }},
-        "gap": {{ block.settings.gap | default: section.settings.gap | default: 24 }},
-        "rotationAngle": {{ block.settings.rotation_angle | default: section.settings.rotation_angle | default: 42 }},
-        "centerScale": {{ center_scale_val }},
-        "depthSpacing": {{ block.settings.depth_spacing | default: section.settings.depth_spacing | default: 200 }},
-        "cardWidth": {{ block.settings.card_width | default: section.settings.card_width | default: 300 }},
-        "showReflection": {{ block.settings.show_reflection | default: section.settings.show_reflection | default: false }}
-      },
-      "navigation": {
-        "arrows": {{ block.settings.arrows | default: section.settings.arrows | default: false }},
-        "dots": {{ block.settings.dots | default: section.settings.dots | default: false }},
-        "autoplay": {{ block.settings.autoplay | default: section.settings.autoplay | default: false }}
-      }
-    }
-  {%- endcapture -%}
 {%- endif -%}
+
+{%- assign design_setting = block.settings.design | default: section.settings.design | default: "3" -%}
+{%- assign design_num = design_setting | plus: 0 -%}
+{%- assign center_scale_raw = block.settings.center_scale | default: section.settings.center_scale | default: 112 -%}
+{%- assign center_scale_val = center_scale_raw | times: 1.0 | divided_by: 100.0 -%}
+
+{%- capture settings_json -%}
+  {
+    "design": {{ design_num }},
+    "appearance": {
+      "backgroundColor": "{{ block.settings.background_color | default: section.settings.background_color | default: '#ffffff' }}",
+      "borderRadius": {{ block.settings.border_radius | default: section.settings.border_radius | default: 16 }},
+      "fontFamily": "Inter"
+    },
+    "layout": {
+      "visibleCards": {{ block.settings.visible_cards | default: section.settings.visible_cards | default: 3 }},
+      "gap": {{ block.settings.gap | default: section.settings.gap | default: 24 }},
+      "rotationAngle": {{ block.settings.rotation_angle | default: section.settings.rotation_angle | default: 42 }},
+      "centerScale": {{ center_scale_val }},
+      "depthSpacing": {{ block.settings.depth_spacing | default: section.settings.depth_spacing | default: 200 }},
+      "cardWidth": {{ block.settings.card_width | default: section.settings.card_width | default: 300 }},
+      "showReflection": {{ block.settings.show_reflection | default: section.settings.show_reflection | default: false }}
+    },
+    "navigation": {
+      "arrows": {{ block.settings.arrows | default: section.settings.arrows | default: false }},
+      "dots": {{ block.settings.dots | default: section.settings.dots | default: false }},
+      "autoplay": {{ block.settings.autoplay | default: section.settings.autoplay | default: false }}
+    }
+  }
+{%- endcapture -%}
 
 <div class="carousel-craft-embed" 
      data-shop="{{ shop.permanent_domain }}" 
      data-carousel-source="{{ source }}"
      data-carousel-name="{% if block.settings.carousel_name != blank %}{{ block.settings.carousel_name | escape }}{% else %}{{ section.settings.carousel_name | escape }}{% endif %}"
+     data-customizer-settings='{{ settings_json }}'
      {% if source == "customizer" %}
      data-customizer-slides='{{ slides_json }}'
-     data-customizer-settings='{{ settings_json }}'
      {% endif %}>
   <!-- Loading state -->
   <div class="carousel-craft-loading" style="text-align: center; padding: 2rem 0; color: #9ca3af; font-family: sans-serif;">
@@ -146,13 +146,13 @@
     {
       "type": "text",
       "id": "carousel_name",
-      "label": "Carousel Name",
-      "info": "Used for App Database source lookup. If left blank, the most recently edited active carousel will show automatically."
+      "label": "Lookup Carousel by Name",
+      "info": "Enter the exact name of the carousel created in your App Dashboard (e.g., 'Floating Cards Carousel'). If left blank, the most recently edited active carousel will load automatically."
     },
     {
       "type": "header",
       "content": "Customizer Design & Layout",
-      "info": "These settings apply when source is set to Theme Customizer."
+      "info": "These settings apply to Customizer slides, and will override App Database values if specified."
     },
     {
       "type": "select",
