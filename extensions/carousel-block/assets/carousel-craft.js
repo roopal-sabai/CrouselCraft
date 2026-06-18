@@ -1033,6 +1033,21 @@
       window.addEventListener("mouseup", onMouseUp);
     });
 
+    // Autoplay logic
+    if (navigation.autoplay) {
+      const speed = parseInt(navigation.speed || "3500", 10);
+      let autoplayTimer;
+      const startAutoplay = () => {
+        autoplayTimer = setInterval(() => {
+          currentIndex = (currentIndex + 1) % cards.length;
+          update();
+        }, speed);
+      };
+      startAutoplay();
+      container.addEventListener("mouseenter", () => clearInterval(autoplayTimer));
+      container.addEventListener("mouseleave", () => startAutoplay());
+    }
+
     update();
   }
 })();
