@@ -128,6 +128,13 @@
       const shop = embed.getAttribute("data-shop");
       const name = embed.getAttribute("data-carousel-name");
 
+      // Dynamically update API_HOST from container attributes (populated from shop metafields)
+      const metaAppUrl = embed.getAttribute("data-app-url");
+      if (metaAppUrl && metaAppUrl.trim()) {
+        API_HOST = metaAppUrl.trim();
+        console.log("[CarouselCraft] Using dynamic API Host from metafield:", API_HOST);
+      }
+
       try {
         const slidesData = JSON.parse(embed.getAttribute("data-customizer-slides") || "[]");
         const settingsData = JSON.parse(embed.getAttribute("data-customizer-settings") || "{}");
@@ -165,17 +172,35 @@
                 const dbNavigation = typeof dbCarousel.navigation === "string" ? JSON.parse(dbCarousel.navigation) : dbCarousel.navigation || {};
                 const dbSlides = dbCarousel.slides || [];
 
-                // Smart Merge Slides: Customizer takes priority over Database
+                // Smart Merge Slides: Customizer overrides specific fields if changed, otherwise database takes priority
                 const mergedSlides = [];
                 const maxSlides = Math.max(dbSlides.length, slidesData.length);
                 for (let i = 0; i < maxSlides; i++) {
                   const customizerSlide = slidesData[i];
                   const dbSlide = dbSlides[i];
                   
-                  const isCustomizerDefined = customizerSlide && (customizerSlide.title || customizerSlide.imageUrl);
-                  
-                  if (isCustomizerDefined) {
-                    mergedSlides.push(customizerSlide);
+                  if (dbSlide && customizerSlide) {
+                    const hasCustomImage = customizerSlide.imageUrl && customizerSlide.imageUrl !== "";
+                    
+                    const isDefaultTitle = (i === 0 && customizerSlide.title === "Slide 1") || !customizerSlide.title;
+                    const hasCustomTitle = !isDefaultTitle;
+
+                    const isDefaultDesc = (i === 0 && customizerSlide.description === "Describe your product here.") || !customizerSlide.description;
+                    const hasCustomDesc = !isDefaultDesc;
+
+                    const isDefaultBtn = customizerSlide.buttonText === "Shop Now" || !customizerSlide.buttonText;
+                    const hasCustomBtn = !isDefaultBtn;
+
+                    const hasCustomLink = customizerSlide.linkUrl && customizerSlide.linkUrl !== "#" && customizerSlide.linkUrl !== "";
+
+                    mergedSlides.push({
+                      id: dbSlide.id || `merged-${i}`,
+                      imageUrl: hasCustomImage ? customizerSlide.imageUrl : dbSlide.imageUrl,
+                      title: hasCustomTitle ? customizerSlide.title : dbSlide.title,
+                      description: hasCustomDesc ? customizerSlide.description : dbSlide.description,
+                      buttonText: hasCustomBtn ? customizerSlide.buttonText : dbSlide.buttonText,
+                      linkUrl: hasCustomLink ? customizerSlide.linkUrl : dbSlide.linkUrl
+                    });
                   } else if (dbSlide) {
                     mergedSlides.push({
                       id: dbSlide.id || `db-${i}`,
@@ -185,6 +210,11 @@
                       buttonText: dbSlide.buttonText || "",
                       linkUrl: dbSlide.linkUrl || "#"
                     });
+                  } else if (customizerSlide) {
+                    const isDefaultTitle = (i === 0 && customizerSlide.title === "Slide 1") || !customizerSlide.title;
+                    if (customizerSlide.imageUrl || !isDefaultTitle) {
+                      mergedSlides.push(customizerSlide);
+                    }
                   }
                 }
 
@@ -287,6 +317,256 @@
         setupStandardSlider(container, design, navigation, layout);
       }
     }
+
+    // Render the edit button overlay in Shopify customizer designMode
+    if (window.Shopify && window.Shopify.designMode) {
+      const shop = container.getAttribute("data-shop") || "";
+      const carouselName = container.getAttribute("data-carousel-name") || "";
+      
+      // Only show slide editor if a lookup name is entered (so it merges/saves to DB)
+      if (carouselName.trim()) {
+        const editBtn = document.createElement("div");
+        editBtn.className = "cc-storefront-edit-overlay";
+        editBtn.innerHTML = `
+          <button class="cc-storefront-edit-btn" style="position: absolute; top: 12px; right: 12px; z-index: 99999; background: #111827; color: #ffffff; border: none; padding: 6px 12px; border-radius: 8px; font-size: 11px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 4px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); transition: all 0.2s;">
+            <span>⚙️</span> Edit slides list
+          </button>
+        `;
+        
+        // Ensure container is relative
+        container.style.position = "relative";
+        container.appendChild(editBtn);
+        
+        editBtn.querySelector("button").addEventListener("click", (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          openSlideEditorModal(shop, carouselName, slides, (updatedSlides) => {
+            // Re-render carousel instantly in the customizer preview
+            const updatedData = { ...data, slides: updatedSlides };
+            renderCarousel(updatedData, container);
+          });
+        });
+      }
+    }
+  }
+
+  function openSlideEditorModal(shop, name, initialSlides, onSaveCallback) {
+    // Check if modal already exists
+    let modal = document.getElementById("cc-slide-editor-modal");
+    if (modal) modal.remove();
+
+    modal = document.createElement("div");
+    modal.id = "cc-slide-editor-modal";
+    modal.style.cssText = `
+      position: fixed;
+      inset: 0;
+      z-index: 9999999;
+      background: rgba(0, 0, 0, 0.5);
+      backdrop-filter: blur(4px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: Inter, system-ui, sans-serif;
+      color: #1f2937;
+    `;
+
+    // Deep clone slides so we can revert if cancelled
+    let localSlides = JSON.parse(JSON.stringify(initialSlides));
+    let selectedIndex = localSlides.length > 0 ? 0 : null;
+
+    const renderModalContent = () => {
+      const slideListHtml = localSlides.map((s, idx) => `
+        <div class="cc-editor-slide-row ${idx === selectedIndex ? 'active' : ''}" data-index="${idx}" style="display: flex; align-items: center; gap: 12px; padding: 10px; border-radius: 8px; cursor: pointer; transition: background 0.15s; margin-bottom: 6px; border: 1px solid ${idx === selectedIndex ? '#111827' : 'transparent'}; background: ${idx === selectedIndex ? '#f3f4f6' : 'transparent'};">
+          <div style="width: 40px; height: 40px; border-radius: 6px; background: #e5e7eb; overflow: hidden; display: flex; align-items: center; justify-content: center; flex-shrink: 0; border: 1px solid #e5e7eb;">
+            ${s.imageUrl ? `<img src="${s.imageUrl}" style="width: 100%; height: 100%; object-fit: cover;" />` : `<span style="font-size: 16px; color: #9ca3af;">🖼️</span>`}
+          </div>
+          <div style="flex: 1; min-width: 0; text-align: left;">
+            <div style="font-size: 13px; font-weight: 700; color: #111827; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${s.title || `Slide ${idx + 1}`}</div>
+            <div style="font-size: 11px; color: #6b7280; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${s.description || 'No description'}</div>
+          </div>
+          <button class="cc-editor-delete-slide-btn" data-index="${idx}" style="background: none; border: none; font-size: 14px; cursor: pointer; padding: 4px; border-radius: 4px; display: flex; align-items: center; justify-content: center; color: #9ca3af; transition: color 0.15s;" title="Delete slide">🗑️</button>
+        </div>
+      `).join("");
+
+      const formHtml = selectedIndex !== null && localSlides[selectedIndex] ? `
+        <div style="display: flex; flex-direction: column; gap: 12px; height: 100%;">
+          <div style="font-size: 14px; font-weight: 700; border-b: 1px solid #f3f4f6; padding-bottom: 8px; margin-bottom: 4px; text-align: left;">Edit Slide Details</div>
+          
+          <div style="display: flex; flex-direction: column; gap: 4px; text-align: left;">
+            <label style="font-size: 10px; font-weight: 700; color: #9ca3af; text-transform: uppercase; tracking-wider;">Image URL</label>
+            <input type="text" id="cc-edit-imageUrl" value="${localSlides[selectedIndex].imageUrl || ''}" style="width: 100%; font-size: 13px; padding: 8px; border: 1px solid #d1d5db; border-radius: 6px;" />
+          </div>
+
+          <div style="display: flex; flex-direction: column; gap: 4px; text-align: left;">
+            <label style="font-size: 10px; font-weight: 700; color: #9ca3af; text-transform: uppercase; tracking-wider;">Title</label>
+            <input type="text" id="cc-edit-title" value="${localSlides[selectedIndex].title || ''}" style="width: 100%; font-size: 13px; padding: 8px; border: 1px solid #d1d5db; border-radius: 6px;" />
+          </div>
+
+          <div style="display: flex; flex-direction: column; gap: 4px; text-align: left;">
+            <label style="font-size: 10px; font-weight: 700; color: #9ca3af; text-transform: uppercase; tracking-wider;">Description</label>
+            <textarea id="cc-edit-description" rows="3" style="width: 100%; font-size: 13px; padding: 8px; border: 1px solid #d1d5db; border-radius: 6px; resize: none;">${localSlides[selectedIndex].description || ''}</textarea>
+          </div>
+
+          <div style="display: flex; flex-direction: column; gap: 4px; text-align: left;">
+            <label style="font-size: 10px; font-weight: 700; color: #9ca3af; text-transform: uppercase; tracking-wider;">Button Text</label>
+            <input type="text" id="cc-edit-buttonText" value="${localSlides[selectedIndex].buttonText || ''}" style="width: 100%; font-size: 13px; padding: 8px; border: 1px solid #d1d5db; border-radius: 6px;" />
+          </div>
+
+          <div style="display: flex; flex-direction: column; gap: 4px; text-align: left;">
+            <label style="font-size: 10px; font-weight: 700; color: #9ca3af; text-transform: uppercase; tracking-wider;">Redirect URL</label>
+            <input type="text" id="cc-edit-linkUrl" value="${localSlides[selectedIndex].linkUrl || ''}" style="width: 100%; font-size: 13px; padding: 8px; border: 1px solid #d1d5db; border-radius: 6px;" />
+          </div>
+        </div>
+      ` : `
+        <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; color: #9ca3af; font-size: 13px; min-height: 250px;">
+          <span>👈 Select a slide to edit or add a new slide</span>
+        </div>
+      `;
+
+      modal.innerHTML = `
+        <div style="background: #ffffff; border-radius: 16px; width: 90%; max-width: 800px; height: 80vh; max-height: 600px; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04);">
+          <!-- Modal Header -->
+          <div style="padding: 16px 20px; border-bottom: 1px solid #f3f4f6; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0;">
+            <div style="text-align: left;">
+              <h3 style="margin: 0; font-size: 16px; font-weight: 700; color: #111827;">Edit Slides: ${name}</h3>
+              <p style="margin: 2px 0 0 0; font-size: 11px; color: #6b7280;">Changes will sync directly to the app dashboard database.</p>
+            </div>
+            <button class="cc-modal-close-btn" style="background: none; border: none; font-size: 20px; cursor: pointer; color: #9ca3af; transition: color 0.15s;">&times;</button>
+          </div>
+
+          <!-- Modal Body -->
+          <div style="flex: 1; display: flex; overflow: hidden;">
+            <!-- Left Side: Slide list -->
+            <div style="width: 300px; border-right: 1px solid #f3f4f6; display: flex; flex-direction: column; height: 100%;">
+              <div style="flex: 1; overflow-y: auto; padding: 16px;" class="cc-modal-slides-list-container">
+                ${slideListHtml}
+              </div>
+              <div style="padding: 12px 16px; border-top: 1px solid #f3f4f6; flex-shrink: 0;">
+                <button class="cc-editor-add-slide-btn" style="width: 100%; background: #ffffff; border: 1px dashed #d1d5db; color: #374151; font-size: 13px; font-weight: 600; padding: 10px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; transition: all 0.15s;">
+                  <span>➕</span> Add New Slide
+                </button>
+              </div>
+            </div>
+
+            <!-- Right Side: Edit Form -->
+            <div style="flex: 1; overflow-y: auto; padding: 20px;" class="cc-modal-form-container">
+              ${formHtml}
+            </div>
+          </div>
+
+          <!-- Modal Footer -->
+          <div style="padding: 16px 20px; border-top: 1px solid #f3f4f6; display: flex; align-items: center; justify-content: flex-end; gap: 10px; flex-shrink: 0; background: #fafafa;">
+            <button class="cc-modal-cancel-btn" style="background: #ffffff; border: 1px solid #d1d5db; color: #374151; font-size: 13px; font-weight: 600; padding: 8px 16px; border-radius: 8px; cursor: pointer; transition: background 0.15s;">Cancel</button>
+            <button class="cc-modal-save-btn" style="background: #111827; border: none; color: #ffffff; font-size: 13px; font-weight: 600; padding: 8px 20px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: opacity 0.15s;">
+              <span>💾</span> Save to Database
+            </button>
+          </div>
+        </div>
+      `;
+
+      attachEventListeners();
+    };
+
+    const attachEventListeners = () => {
+      // Close button
+      modal.querySelector(".cc-modal-close-btn").addEventListener("click", () => modal.remove());
+      modal.querySelector(".cc-modal-cancel-btn").addEventListener("click", () => modal.remove());
+
+      // Slide list items click
+      modal.querySelectorAll(".cc-editor-slide-row").forEach(row => {
+        row.addEventListener("click", (e) => {
+          if (e.target.classList.contains("cc-editor-delete-slide-btn")) return;
+          saveFormState();
+          selectedIndex = parseInt(row.getAttribute("data-index"));
+          renderModalContent();
+        });
+      });
+
+      // Delete slide button
+      modal.querySelectorAll(".cc-editor-delete-slide-btn").forEach(btn => {
+        btn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          const idx = parseInt(btn.getAttribute("data-index"));
+          if (confirm(`Delete slide "${localSlides[idx].title || `Slide ${idx + 1}`}"?`)) {
+            localSlides.splice(idx, 1);
+            if (selectedIndex >= localSlides.length) {
+              selectedIndex = localSlides.length > 0 ? localSlides.length - 1 : null;
+            }
+            renderModalContent();
+          }
+        });
+      });
+
+      // Add slide button
+      modal.querySelector(".cc-editor-add-slide-btn").addEventListener("click", () => {
+        saveFormState();
+        localSlides.push({
+          title: "New Slide",
+          description: "Describe your product here.",
+          buttonText: "Shop Now",
+          linkUrl: "#",
+          imageUrl: "https://images.unsplash.com/photo-1618220179428-22790b46a0eb?w=800&q=80"
+        });
+        selectedIndex = localSlides.length - 1;
+        renderModalContent();
+      });
+
+      // Save button (sync to DB)
+      modal.querySelector(".cc-modal-save-btn").addEventListener("click", async () => {
+        saveFormState();
+        const saveBtn = modal.querySelector(".cc-modal-save-btn");
+        saveBtn.disabled = true;
+        saveBtn.style.opacity = "0.7";
+        saveBtn.innerText = "Saving...";
+
+        try {
+          const res = await fetch(`${API_HOST}/api/carousels`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              shop,
+              name,
+              slides: localSlides
+            })
+          });
+
+          if (!res.ok) {
+            const errBody = await res.json();
+            throw new Error(errBody.error || "Failed to save slides");
+          }
+
+          if (typeof onSaveCallback === "function") {
+            onSaveCallback(localSlides);
+          }
+
+          modal.remove();
+          console.log("[CarouselCraft] Database slides updated successfully!");
+        } catch (err) {
+          alert(`Error saving: ${err.message}`);
+          saveBtn.disabled = false;
+          saveBtn.style.opacity = "1";
+          saveBtn.innerHTML = `<span>💾</span> Save to Database`;
+        }
+      });
+    };
+
+    const saveFormState = () => {
+      if (selectedIndex === null || !localSlides[selectedIndex]) return;
+      const img = modal.querySelector("#cc-edit-imageUrl");
+      const title = modal.querySelector("#cc-edit-title");
+      const desc = modal.querySelector("#cc-edit-description");
+      const btn = modal.querySelector("#cc-edit-buttonText");
+      const link = modal.querySelector("#cc-edit-linkUrl");
+
+      if (img) localSlides[selectedIndex].imageUrl = img.value;
+      if (title) localSlides[selectedIndex].title = title.value;
+      if (desc) localSlides[selectedIndex].description = desc.value;
+      if (btn) localSlides[selectedIndex].buttonText = btn.value;
+      if (link) localSlides[selectedIndex].linkUrl = link.value;
+    };
+
+    document.body.appendChild(modal);
+    renderModalContent();
   }
 
   // --- Renderers ---
@@ -328,10 +608,10 @@
             <div class="cc-accent-bar" style="background: ${accent};"></div>
             <div class="p-5 flex flex-col justify-between flex-1">
               <div>
-                <div class="aspect-[4/5] w-full overflow-hidden bg-gray-50 mb-4 relative" style="border-radius: ${Math.max(0, borderRadiusVal - 4)}px;">
+                <a href="${slide.linkUrl || '#'}" class="block aspect-[4/5] w-full overflow-hidden bg-gray-50 mb-4 relative" style="border-radius: ${Math.max(0, borderRadiusVal - 4)}px;">
                   ${slide.imageUrl ? `<img src="${slide.imageUrl}" alt="${slide.title || ''}" class="w-full h-full object-cover" loading="lazy" />` : `<div class="w-full h-full flex items-center justify-center bg-gray-100 text-gray-300">No Image</div>`}
                   <div class="cc-number-badge">${String(index + 1).padStart(2, "0")}</div>
-                </div>
+                </a>
                 <h3 class="font-bold text-gray-900 text-lg mb-1.5 line-clamp-1">${slide.title || 'Untitled'}</h3>
                 <p class="text-gray-500 text-sm line-clamp-3 leading-relaxed mb-4">${slide.description || ''}</p>
               </div>
@@ -348,9 +628,9 @@
       return `
         <div class="cc-slide flex-shrink-0 bg-white border border-gray-100 shadow-md hover:shadow-xl transition-all duration-300 ${cardShapeClass} p-5 flex flex-col justify-between" ${rotationAttr} style="${cardStyle}">
           <div>
-            <div class="aspect-[4/5] w-full overflow-hidden ${cardShapeClass === 'rounded-full' ? 'rounded-full' : 'rounded-lg'} bg-gray-50 mb-4">
+            <a href="${slide.linkUrl || '#'}" class="block aspect-[4/5] w-full overflow-hidden ${cardShapeClass === 'rounded-full' ? 'rounded-full' : 'rounded-lg'} bg-gray-50 mb-4">
               ${slide.imageUrl ? `<img src="${slide.imageUrl}" alt="${slide.title || ''}" class="w-full h-full object-cover" loading="lazy" />` : `<div class="w-full h-full flex items-center justify-center bg-gray-100 text-gray-300">No Image</div>`}
-            </div>
+            </a>
             <h3 class="font-bold text-gray-900 text-lg mb-1 line-clamp-1">${slide.title || 'Untitled'}</h3>
             <p class="text-gray-500 text-sm line-clamp-2 leading-relaxed mb-4">${slide.description || ''}</p>
           </div>
@@ -395,7 +675,7 @@
 
     let itemsHtml = doubledSlides.map((slide) => `
       <div class="cc-marquee-item flex-shrink-0 bg-white border border-gray-100 p-4 shadow-sm mx-3 relative group" style="width: ${cardWidth}px; border-radius: ${borderRadius}px; overflow: hidden; height: 380px;">
-        <div class="w-full h-full overflow-hidden bg-gray-50 relative" style="border-radius: ${borderRadius - 4}px;">
+        <a href="${slide.linkUrl || '#'}" class="block w-full h-full overflow-hidden bg-gray-50 relative" style="border-radius: ${borderRadius - 4}px;">
           ${slide.imageUrl ? `<img src="${slide.imageUrl}" alt="" class="w-full h-full object-cover transition-all duration-500" loading="lazy" />` : ""}
           <!-- Hover reveal overlay -->
           <div class="cc-marquee-overlay absolute inset-0 flex flex-col justify-end p-5 opacity-0 transition-opacity duration-300" 
@@ -403,12 +683,12 @@
             <h3 class="text-white font-bold text-base leading-tight mb-2" style="color: #ffffff !important; margin: 0 0 0.25rem 0;">${slide.title || 'Brand'}</h3>
             ${slide.description ? `<p class="text-white text-xs line-clamp-1 mb-3" style="color: rgba(255,255,255,0.8) !important; margin: 0 0 0.5rem 0;">${slide.description}</p>` : ''}
             ${slide.buttonText ? `
-              <a href="${slide.linkUrl || '#'}" class="mt-2 inline-block border border-white text-white text-xs font-semibold px-4 py-1.5 rounded-full hover:bg-white hover:text-gray-900 transition-all cc-btn w-fit" style="border: 1px solid #ffffff; color: #ffffff !important; border-radius: 9999px; padding: 0.375rem 1rem;">
+              <span class="mt-2 inline-block border border-white text-white text-xs font-semibold px-4 py-1.5 rounded-full hover:bg-white hover:text-gray-900 transition-all cc-btn w-fit" style="border: 1px solid #ffffff; color: #ffffff !important; border-radius: 9999px; padding: 0.375rem 1rem;">
                 ${slide.buttonText}
-              </a>
+              </span>
             ` : ''}
           </div>
-        </div>
+        </a>
       </div>
     `).join("");
 
@@ -436,10 +716,12 @@
              data-index="${index}">
           <!-- Full-bleed image -->
           <div class="relative w-full h-full bg-gray-100">
-            ${slide.imageUrl ? `<img src="${slide.imageUrl}" alt="" class="w-full h-full object-cover" loading="lazy" />` : `<div class="w-full h-full flex items-center justify-center text-gray-300">No Image</div>`}
+            <a href="${slide.linkUrl || '#'}" class="cc-stacked-link block w-full h-full" style="pointer-events: ${index === 0 ? 'auto' : 'none'};">
+              ${slide.imageUrl ? `<img src="${slide.imageUrl}" alt="" class="w-full h-full object-cover" loading="lazy" />` : `<div class="w-full h-full flex items-center justify-center text-gray-300">No Image</div>`}
+            </a>
             
             <!-- Bottom gradient overlay -->
-            <div class="absolute inset-0" style="background: linear-gradient(to top, rgba(0,0,0,0.72) 0%, rgba(0,0,0,0.0) 48%); z-index: 1;"></div>
+            <div class="absolute inset-0 pointer-events-none" style="background: linear-gradient(to top, rgba(0,0,0,0.72) 0%, rgba(0,0,0,0.0) 48%); z-index: 1;"></div>
             
             <!-- Content overlay -->
             <div class="absolute bottom-0 left-0 right-0 p-6" style="z-index: 2;">
@@ -512,9 +794,9 @@
                  style="background: radial-gradient(ellipse at center, rgba(139,92,246,0.15) 0%, rgba(59,130,246,0.10) 50%, transparent 75%); filter: blur(32px); z-index: 0;">
             </div>
             <div class="cc-3d-tilt-card relative z-10 mx-auto" style="perspective: 1000px; max-width: 400px; width: 100%;">
-              <div class="aspect-[4/5] w-full bg-gray-100 overflow-hidden shadow-xl" style="border-radius: ${borderRadius}px; transform-style: preserve-3d; transition: transform 0.1s ease-out;">
+              <a href="${slide.linkUrl || '#'}" class="cc-3d-link block aspect-[4/5] w-full bg-gray-100 overflow-hidden shadow-xl" style="border-radius: ${borderRadius}px; transform-style: preserve-3d; transition: transform 0.1s ease-out; pointer-events: ${index === 0 ? 'auto' : 'none'};">
                 ${slide.imageUrl ? `<img src="${slide.imageUrl}" alt="" class="w-full h-full object-cover" draggable="false" />` : `<div class="w-full h-full flex items-center justify-center text-gray-300">No Image</div>`}
-              </div>
+              </a>
             </div>
           </div>
         </div>
@@ -539,12 +821,15 @@
 
     const update = () => {
       slides.forEach((slide, index) => {
+        const link = slide.querySelector(".cc-3d-link");
         if (index === currentIndex) {
           slide.style.opacity = "1";
           slide.style.pointerEvents = "auto";
+          if (link) link.style.pointerEvents = "auto";
         } else {
           slide.style.opacity = "0";
           slide.style.pointerEvents = "none";
+          if (link) link.style.pointerEvents = "none";
         }
       });
     };
@@ -733,6 +1018,11 @@
           card.style.zIndex = cards.length - newIdx;
           card.style.transform = `translateY(${newIdx * 12}px) scale(${1 - newIdx * 0.04})`;
           card.style.opacity = newIdx > 2 ? "0" : "1";
+
+          const link = card.querySelector(".cc-stacked-link");
+          if (link) {
+            link.style.pointerEvents = newIdx === 0 ? "auto" : "none";
+          }
         });
         
         setTimeout(() => {
@@ -821,7 +1111,9 @@
              style="width: ${cardWidth}px; left: calc(50% - ${cardWidth / 2}px); top: calc(50% - 180px); transform-style: preserve-3d; transition: transform 0.4s cubic-bezier(0.25, 0.8, 0.25, 1), opacity 0.4s ease, filter 0.4s ease;" 
              data-index="${index}">
           <div class="shadow-lg" style="border-radius: ${borderRadius}px; height: 360px; position: relative; overflow: hidden; background-color: #111827;">
-            ${slide.imageUrl ? `<img src="${slide.imageUrl}" alt="${slide.title || ''}" class="w-full h-full object-cover" style="width: 100%; height: 100%; object-fit: cover; display: block;" draggable="false" />` : `<div class="w-full h-full flex items-center justify-center text-gray-600 text-sm">No Image</div>`}
+            <a href="${slide.linkUrl || '#'}" class="cc-coverflow-link block w-full h-full" style="pointer-events: ${index === 0 ? 'auto' : 'none'};">
+              ${slide.imageUrl ? `<img src="${slide.imageUrl}" alt="${slide.title || ''}" class="w-full h-full object-cover" style="width: 100%; height: 100%; object-fit: cover; display: block;" draggable="false" />` : `<div class="w-full h-full flex items-center justify-center text-gray-600 text-sm">No Image</div>`}
+            </a>
             <div class="cc-coverflow-info" style="position: absolute; left: 0; right: 0; bottom: 0; padding: 1.25rem; background: linear-gradient(to top, rgba(0,0,0,0.85) 0%, transparent 65%); z-index: 10; display: flex; flex-direction: column; justify-content: flex-end; opacity: ${index === 0 ? '1' : '0'}; pointer-events: ${index === 0 ? 'auto' : 'none'}; transition: opacity 0.3s ease;">
               <h3 class="text-white font-bold text-lg leading-tight mb-1" style="color: #ffffff; margin-bottom: 4px; font-weight: 700; font-size: 1.125rem;">${slide.title || 'Untitled'}</h3>
               ${slide.buttonText ? `<a href="${slide.linkUrl || '#'}" class="mt-2 inline-block bg-white text-gray-900 text-xs font-bold px-4 py-2 rounded-lg hover:bg-gray-100 transition-colors w-fit cc-btn" style="background-color: #ffffff; color: #111827; display: inline-block; font-size: 0.75rem; font-weight: 700; padding: 0.5rem 1rem; border-radius: 0.5rem; text-decoration: none; width: fit-content; text-align: center;">${slide.buttonText}</a>` : ''}
@@ -896,6 +1188,11 @@
         if (info) {
           info.style.opacity = isActive ? "1" : "0";
           info.style.pointerEvents = isActive ? "auto" : "none";
+        }
+
+        const link = card.querySelector(".cc-coverflow-link");
+        if (link) {
+          link.style.pointerEvents = isActive ? "auto" : "none";
         }
 
         const reflection = card.querySelector(".cc-coverflow-reflection");

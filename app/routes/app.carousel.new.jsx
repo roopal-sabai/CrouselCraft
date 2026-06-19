@@ -55,6 +55,7 @@ export const action = async ({ request }) => {
       shopId: shopDomain,
       name: name,
       design: design,
+      isActive: true,
       appearance: JSON.stringify({
         backgroundColor: "#ffffff",
         textColor: "#000000",

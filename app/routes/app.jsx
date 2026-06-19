@@ -4,7 +4,61 @@ import { AppProvider } from "@shopify/shopify-app-react-router/react";
 import { authenticate } from "../shopify.server";
 
 export const loader = async ({ request }) => {
-  await authenticate.admin(request);
+  const { admin, session } = await authenticate.admin(request);
+
+  // Sync the current SHOPIFY_APP_URL to Shop metafield so storefront Liquid can read it
+  const appUrl = process.env.SHOPIFY_APP_URL || "";
+  if (appUrl) {
+    try {
+      const shopQuery = await admin.graphql(
+        `#graphql
+        query {
+          shop {
+            id
+          }
+        }`
+      );
+      const shopData = await shopQuery.json();
+      const shopId = shopData.data?.shop?.id;
+
+      if (shopId) {
+        const response = await admin.graphql(
+          `#graphql
+          mutation CreateMetafield($metafields: [MetafieldsSetInput!]!) {
+            metafieldsSet(metafields: $metafields) {
+              metafields {
+                id
+                namespace
+                key
+                value
+              }
+              userErrors {
+                field
+                message
+              }
+            }
+          }`,
+          {
+            variables: {
+              metafields: [
+                {
+                  ownerId: shopId,
+                  namespace: "carousel_craft",
+                  key: "app_url",
+                  value: appUrl,
+                  type: "single_line_text_field"
+                }
+              ]
+            }
+          }
+        );
+        const resJson = await response.json();
+        console.log("[CarouselCraft] Sync App URL Metafield Result:", JSON.stringify(resJson.data?.metafieldsSet));
+      }
+    } catch (e) {
+      console.error("[CarouselCraft] Failed to sync App URL metafield:", e);
+    }
+  }
 
   // eslint-disable-next-line no-undef
   return { apiKey: process.env.SHOPIFY_API_KEY || "" };

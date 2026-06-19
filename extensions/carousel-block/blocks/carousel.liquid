@@ -64,9 +64,12 @@
   }
 {%- endcapture -%}
 
+{%- assign app_url = block.settings.dev_app_url | default: shop.metafields.carousel_craft.app_url.value | default: "https://carouselcraft.norexa.online" -%}
+
 <div class="carousel-craft-embed" 
      style="max-width: {{ max_w }}px; margin: 0 auto;"
      data-shop="{{ shop.permanent_domain }}" 
+     data-app-url="{{ app_url }}"
      data-carousel-name="{% if block.settings.carousel_name != blank %}{{ block.settings.carousel_name | escape }}{% else %}{{ section.settings.carousel_name | escape }}{% endif %}"
      data-customizer-settings='{{ settings_json }}'
      data-customizer-slides='{{ slides_json }}'>
@@ -88,6 +91,12 @@
       "id": "carousel_name",
       "label": "Lookup App Carousel by Name",
       "info": "Enter the name of a carousel created in the app dashboard to load its slides. Leave blank to manage slides entirely in the Customizer."
+    },
+    {
+      "type": "text",
+      "id": "dev_app_url",
+      "label": "Development App URL Override",
+      "info": "If running locally, paste your Cloudflare/Ngrok tunnel URL (e.g. https://xxx.trycloudflare.com) here to resolve Failed to Fetch errors."
     },
     {
       "type": "header",
