@@ -736,7 +736,6 @@
       const transform = `translateY(${index * 12}px) scale(${1 - index * 0.04})`;
       const opacity = index > 2 ? 0 : 1;
 
-      return `
       const cardHeight = layout.height ? layout.height - 40 : 480;
 
       return `
