@@ -156,10 +156,21 @@
 
         // If a database carousel lookup is requested, fetch and merge in the background
         if (name && name.trim()) {
-          fetch(`${API_HOST}/api/carousels?shop=${shop}&name=${encodeURIComponent(name.trim())}&_t=${Date.now()}`)
-            .then(res => {
-              if (!res.ok) throw new Error("Failed to fetch database carousel");
-              return res.json();
+          const fetchCarousel = (host) => {
+            return fetch(`${host}/api/carousels?shop=${shop}&name=${encodeURIComponent(name.trim())}&_t=${Date.now()}`)
+              .then(res => {
+                if (!res.ok) throw new Error("Failed to fetch database carousel");
+                return res.json();
+              });
+          };
+
+          fetchCarousel(API_HOST)
+            .catch(err => {
+              console.warn("[CarouselCraft] Main API host failed, trying production fallback...", err);
+              if (API_HOST !== "https://carouselcraft.norexa.online") {
+                return fetchCarousel("https://carouselcraft.norexa.online");
+              }
+              throw err;
             })
             .then(carousels => {
               if (carousels && carousels.length > 0) {
@@ -519,8 +530,8 @@
         saveBtn.style.opacity = "0.7";
         saveBtn.innerText = "Saving...";
 
-        try {
-          const res = await fetch(`${API_HOST}/api/carousels`, {
+        const saveSlides = async (host) => {
+          const res = await fetch(`${host}/api/carousels`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
@@ -533,6 +544,21 @@
           if (!res.ok) {
             const errBody = await res.json();
             throw new Error(errBody.error || "Failed to save slides");
+          }
+          return res;
+        };
+
+        try {
+          let res;
+          try {
+            res = await saveSlides(API_HOST);
+          } catch (firstErr) {
+            console.warn("[CarouselCraft] Main API host failed on save, trying production fallback...", firstErr);
+            if (API_HOST !== "https://carouselcraft.norexa.online") {
+              res = await saveSlides("https://carouselcraft.norexa.online");
+            } else {
+              throw firstErr;
+            }
           }
 
           if (typeof onSaveCallback === "function") {
