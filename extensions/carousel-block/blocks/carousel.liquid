@@ -54,6 +54,7 @@
       "centerScale": {{ center_scale_val }},
       "depthSpacing": {{ block.settings.depth_spacing | default: section.settings.depth_spacing | default: 200 }},
       "cardWidth": {{ block.settings.card_width | default: section.settings.card_width | default: 300 }},
+      "height": {{ block.settings.container_height | default: 550 }},
       "showReflection": {{ block.settings.show_reflection | default: section.settings.show_reflection | default: false }}
     },
     "navigation": {
@@ -141,6 +142,16 @@
       "unit": "px",
       "label": "Carousel Max Width",
       "default": 1200
+    },
+    {
+      "type": "range",
+      "id": "container_height",
+      "min": 300,
+      "max": 1000,
+      "step": 50,
+      "unit": "px",
+      "label": "Carousel Height (3D Templates)",
+      "default": 550
     },
     {
       "type": "range",

@@ -315,11 +315,11 @@
 
     // Attach event listeners and interactions
     if (design === 4) {
-      setupStackedDeck(container);
+      setupStackedDeck(container, navigation);
     } else if (design === 3) {
       setupCoverflow(container, layout, navigation);
     } else if (design === 6) {
-      setupShowcase3D(container, layout);
+      setupShowcase3D(container, layout, navigation);
     } else {
       if (design === 2) {
         setupFloatingCards(container, layout);
@@ -737,8 +737,11 @@
       const opacity = index > 2 ? 0 : 1;
 
       return `
+      const cardHeight = layout.height ? layout.height - 40 : 480;
+
+      return `
         <div class="cc-stacked-card absolute w-full max-w-sm bg-white shadow-lg flex flex-col justify-between transition-all duration-300" 
-             style="z-index: ${zIndex}; transform: ${transform}; opacity: ${opacity}; border-radius: ${borderRadius}px; height: 480px; overflow: hidden;" 
+             style="z-index: ${zIndex}; transform: ${transform}; opacity: ${opacity}; border-radius: ${borderRadius}px; height: ${cardHeight}px; overflow: hidden;" 
              data-index="${index}">
           <!-- Full-bleed image -->
           <div class="relative w-full h-full bg-gray-100">
@@ -765,7 +768,7 @@
     }).join("");
 
     return `
-      <div class="cc-stacked-container relative flex justify-center items-center h-[520px] w-full max-w-sm mx-auto overflow-hidden cursor-pointer">
+      <div class="cc-stacked-container relative flex justify-center items-center w-full max-w-sm mx-auto overflow-hidden cursor-pointer" style="height: ${layout.height || 520}px;">
         ${cardsHtml}
         <div class="absolute bottom-2 left-1/2 -translate-x-1/2 bg-black/60 text-white text-[10px] uppercase font-bold tracking-widest px-3 py-1 rounded-full pointer-events-none" style="z-index: 10;">
           Click Card to Cycle
@@ -830,13 +833,13 @@
     }).join("");
 
     return `
-      <div class="cc-3d-showcase-wrapper relative w-full overflow-hidden" style="min-height: 560px; padding: 2rem 0;">
+      <div class="cc-3d-showcase-wrapper relative w-full overflow-hidden" style="min-height: ${layout.height || 560}px; padding: 2rem 0;">
         ${slidesHtml}
       </div>
     `;
   }
 
-  function setupShowcase3D(container, layout) {
+  function setupShowcase3D(container, layout, navigation) {
     const wrapper = container.querySelector(".cc-3d-showcase-wrapper");
     if (!wrapper) return;
     const slides = Array.from(wrapper.querySelectorAll(".cc-3d-slide-item"));
@@ -897,6 +900,24 @@
         });
       }
     });
+
+    // Autoplay logic
+    if (navigation && navigation.autoplay) {
+      const interval = parseInt(navigation.autoplaySpeed || "4000", 10);
+      let autoplayTimer = setInterval(() => {
+        currentIndex = (currentIndex + 1) % slides.length;
+        update();
+      }, interval);
+
+      container.addEventListener("mouseenter", () => clearInterval(autoplayTimer));
+      container.addEventListener("mouseleave", () => {
+        clearInterval(autoplayTimer);
+        autoplayTimer = setInterval(() => {
+          currentIndex = (currentIndex + 1) % slides.length;
+          update();
+        }, interval);
+      });
+    }
   }
 
   // --- Handlers & Functionality ---
@@ -1015,7 +1036,7 @@
     }
   }
 
-  function setupStackedDeck(container) {
+  function setupStackedDeck(container, navigation) {
     const deck = container.querySelector(".cc-stacked-container");
     if (!deck) return;
 
@@ -1063,6 +1084,18 @@
       }
       cycleNext();
     });
+
+    // Autoplay logic
+    if (navigation && navigation.autoplay) {
+      const interval = parseInt(navigation.autoplaySpeed || "4000", 10);
+      let autoplayTimer = setInterval(cycleNext, interval);
+
+      container.addEventListener("mouseenter", () => clearInterval(autoplayTimer));
+      container.addEventListener("mouseleave", () => {
+        clearInterval(autoplayTimer);
+        autoplayTimer = setInterval(cycleNext, interval);
+      });
+    }
 
     // Touch Swipe Gesture Support
     let startY = 0;
@@ -1121,22 +1154,25 @@
     const borderRadius = appearance.borderRadius || 16;
     const showReflection = layout.showReflection !== false;
 
+    const cardHeight = layout.height ? layout.height - 140 : 360;
+    const topOffset = layout.height ? (layout.height - 80 - cardHeight) / 2 : 30;
+
     let slidesHtml = slides.map((slide, index) => {
       let reflectionHtml = "";
       if (showReflection) {
         reflectionHtml = `
           <div class="cc-coverflow-reflection absolute left-0 right-0 overflow-hidden pointer-events-none" 
                style="top: 100%; height: 80px; border-radius: 0 0 ${borderRadius}px ${borderRadius}px; transform: scaleY(-1); opacity: ${index === 0 ? '0.18' : '0'}; mask-image: linear-gradient(to bottom, black 0%, transparent 100%); -webkit-mask-image: linear-gradient(to bottom, black 0%, transparent 100%); z-index: 5; transition: opacity 0.4s ease;">
-            ${slide.imageUrl ? `<img src="${slide.imageUrl}" alt="" style="width: 100%; height: 360px; object-fit: cover; object-position: top; display: block;" />` : ''}
+            ${slide.imageUrl ? `<img src="${slide.imageUrl}" alt="" style="width: 100%; height: ${cardHeight}px; object-fit: cover; object-position: top; display: block;" />` : ''}
           </div>
         `;
       }
 
       return `
         <div class="cc-coverflow-card absolute cursor-pointer" 
-             style="width: ${cardWidth}px; left: calc(50% - ${cardWidth / 2}px); top: calc(50% - 180px); transform-style: preserve-3d; transition: transform 0.4s cubic-bezier(0.25, 0.8, 0.25, 1), opacity 0.4s ease, filter 0.4s ease;" 
+             style="width: ${cardWidth}px; left: calc(50% - ${cardWidth / 2}px); top: ${topOffset}px; transform-style: preserve-3d; transition: transform 0.4s cubic-bezier(0.25, 0.8, 0.25, 1), opacity 0.4s ease, filter 0.4s ease;" 
              data-index="${index}">
-          <div class="shadow-lg" style="border-radius: ${borderRadius}px; height: 360px; position: relative; overflow: hidden; background-color: #111827;">
+          <div class="shadow-lg" style="border-radius: ${borderRadius}px; height: ${cardHeight}px; position: relative; overflow: hidden; background-color: #111827;">
             <a href="${slide.linkUrl || '#'}" class="cc-coverflow-link block w-full h-full" style="pointer-events: ${index === 0 ? 'auto' : 'none'};">
               ${slide.imageUrl ? `<img src="${slide.imageUrl}" alt="${slide.title || ''}" class="w-full h-full object-cover" style="width: 100%; height: 100%; object-fit: cover; display: block;" draggable="false" />` : `<div class="w-full h-full flex items-center justify-center text-gray-600 text-sm">No Image</div>`}
             </a>
@@ -1151,8 +1187,8 @@
     }).join("");
 
     return `
-      <div class="cc-coverflow-wrapper relative flex flex-col items-center justify-center py-8" style="min-height: 500px; width: 100%;">
-        <div class="cc-coverflow-stage relative w-full flex items-center justify-center overflow-hidden" style="height: 420px; perspective: 1200px;">
+      <div class="cc-coverflow-wrapper relative flex flex-col items-center justify-center py-8" style="min-height: ${layout.height || 500}px; width: 100%;">
+        <div class="cc-coverflow-stage relative w-full flex items-center justify-center overflow-hidden" style="height: ${layout.height ? layout.height - 80 : 420}px; perspective: 1200px;">
           ${slidesHtml}
         </div>
         <div class="flex items-center gap-5 mt-6 z-20">
@@ -1333,7 +1369,7 @@
 
     // Autoplay logic
     if (navigation.autoplay) {
-      const speed = parseInt(navigation.speed || "3500", 10);
+      const speed = parseInt(navigation.autoplaySpeed || navigation.speed || "3500", 10);
       let autoplayTimer;
       const startAutoplay = () => {
         autoplayTimer = setInterval(() => {
