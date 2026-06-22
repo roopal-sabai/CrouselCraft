@@ -27,10 +27,10 @@
   }
 
   // Listen for Shopify Theme Editor events to re-initialize
-  document.addEventListener("shopify:section:load", initCarousels);
-  document.addEventListener("shopify:block:select", initCarousels);
+  document.addEventListener("shopify:section:load", () => initCarousels(true));
+  document.addEventListener("shopify:block:select", () => initCarousels(true));
 
-  // Prevent all link redirects inside the Shopify Theme Editor (designMode) to avoid iframe crash/navigation
+  // Prevent all link redirects inside the Shopify Theme Editor (designMode) to avoid iframe crash/navigation, but open in a new tab so merchants can verify links work!
   document.addEventListener("click", (e) => {
     try {
       if (window.Shopify && window.Shopify.designMode && e.target && typeof e.target.closest === "function") {
@@ -38,7 +38,11 @@
         if (embedLink) {
           e.preventDefault();
           e.stopPropagation();
-          console.log("[CarouselCraft] Blocked navigation in Shopify designMode for link:", embedLink.href);
+          const href = embedLink.getAttribute("href");
+          if (href && href !== "#" && href !== "") {
+            console.log("[CarouselCraft] Opening link in new tab during designMode:", href);
+            window.open(href, '_blank');
+          }
         }
       }
     } catch (err) {
@@ -121,8 +125,8 @@
     `;
   }
 
-  async function initCarousels() {
-    const embeds = document.querySelectorAll(".carousel-craft-embed:not([data-initialized])");
+  async function initCarousels(force = false) {
+    const embeds = document.querySelectorAll(force ? ".carousel-craft-embed" : ".carousel-craft-embed:not([data-initialized])");
     for (const embed of embeds) {
       embed.setAttribute("data-initialized", "true");
       const shop = embed.getAttribute("data-shop");
@@ -622,10 +626,14 @@
       if (layout.cardWidth) {
         cardStyle += ` width: ${layout.cardWidth}px; min-width: ${layout.cardWidth}px; max-width: 100%;`;
       }
+      if (layout.height) {
+        cardStyle += ` height: ${layout.height - 40}px;`;
+      }
 
       if (design === 2) {
         const accent = FLOATING_ACCENTS_GRADIENT[index % FLOATING_ACCENTS_GRADIENT.length];
         const borderRadiusVal = appearance.borderRadius || 20;
+        const imgStyle = layout.height ? `height: ${layout.height - 240}px; aspect-ratio: auto;` : `aspect-ratio: 4/5;`;
 
         return `
           <div class="cc-slide flex-shrink-0 bg-white transition-all duration-300 overflow-hidden flex flex-col justify-between" 
@@ -634,7 +642,7 @@
             <div class="cc-accent-bar" style="background: ${accent};"></div>
             <div class="p-5 flex flex-col justify-between flex-1">
               <div>
-                <a href="${slide.linkUrl || '#'}" class="block aspect-[4/5] w-full overflow-hidden bg-gray-50 mb-4 relative" style="border-radius: ${Math.max(0, borderRadiusVal - 4)}px;">
+                <a href="${slide.linkUrl || '#'}" target="_top" class="block w-full overflow-hidden bg-gray-50 mb-4 relative" style="border-radius: ${Math.max(0, borderRadiusVal - 4)}px; ${imgStyle}">
                   ${slide.imageUrl ? `<img src="${slide.imageUrl}" alt="${slide.title || ''}" class="w-full h-full object-cover" loading="lazy" />` : `<div class="w-full h-full flex items-center justify-center bg-gray-100 text-gray-300">No Image</div>`}
                   <div class="cc-number-badge">${String(index + 1).padStart(2, "0")}</div>
                 </a>
@@ -642,7 +650,7 @@
                 <p class="text-gray-500 text-sm line-clamp-3 leading-relaxed mb-4">${slide.description || ''}</p>
               </div>
               ${slide.buttonText ? `
-                <a href="${slide.linkUrl || '#'}" class="cc-btn text-center block w-full py-2.5 px-4 rounded-xl font-bold text-sm text-white transition-all hover:opacity-90" style="background: ${accent}; color: #ffffff !important;">
+                <a href="${slide.linkUrl || '#'}" target="_top" class="cc-btn text-center block w-full py-2.5 px-4 rounded-xl font-bold text-sm text-white transition-all hover:opacity-90" style="background: ${accent}; color: #ffffff !important;">
                   ${slide.buttonText}
                 </a>
               ` : ''}
@@ -651,17 +659,19 @@
         `;
       }
 
+      const imgStyle = layout.height ? `height: ${layout.height - 220}px; aspect-ratio: auto;` : `aspect-ratio: 4/5;`;
+
       return `
         <div class="cc-slide flex-shrink-0 bg-white border border-gray-100 shadow-md hover:shadow-xl transition-all duration-300 ${cardShapeClass} p-5 flex flex-col justify-between" ${rotationAttr} style="${cardStyle}">
           <div>
-            <a href="${slide.linkUrl || '#'}" class="block aspect-[4/5] w-full overflow-hidden ${cardShapeClass === 'rounded-full' ? 'rounded-full' : 'rounded-lg'} bg-gray-50 mb-4">
+            <a href="${slide.linkUrl || '#'}" target="_top" class="block w-full overflow-hidden ${cardShapeClass === 'rounded-full' ? 'rounded-full' : 'rounded-lg'} bg-gray-50 mb-4" style="${imgStyle}">
               ${slide.imageUrl ? `<img src="${slide.imageUrl}" alt="${slide.title || ''}" class="w-full h-full object-cover" loading="lazy" />` : `<div class="w-full h-full flex items-center justify-center bg-gray-100 text-gray-300">No Image</div>`}
             </a>
             <h3 class="font-bold text-gray-900 text-lg mb-1 line-clamp-1">${slide.title || 'Untitled'}</h3>
             <p class="text-gray-500 text-sm line-clamp-2 leading-relaxed mb-4">${slide.description || ''}</p>
           </div>
           ${slide.buttonText ? `
-            <a href="${slide.linkUrl || '#'}" class="cc-btn text-center block w-full py-2.5 px-4 rounded-lg font-bold text-sm transition-all ${
+            <a href="${slide.linkUrl || '#'}" target="_top" class="cc-btn text-center block w-full py-2.5 px-4 rounded-lg font-bold text-sm transition-all ${
               buttonStyle === 'outline' ? 'border border-gray-900 text-gray-900 hover:bg-gray-50' : 
               buttonStyle === 'glass' ? 'bg-gray-100/80 backdrop-blur text-gray-900 hover:bg-gray-200/80' : 
               'bg-gray-900 text-white hover:bg-black'
@@ -695,13 +705,14 @@
     const cardWidth = layout.cardWidth || 280;
     const speed = layout.marqueeSpeed === "fast" ? "12s" : layout.marqueeSpeed === "slow" ? "32s" : "20s";
     const borderRadius = appearance.borderRadius || 16;
+    const marqueeHeight = layout.height ? parseInt(layout.height, 10) - 80 : 380;
 
     // Duplicate slides to ensure seamless loop
     const doubledSlides = [...slides, ...slides, ...slides, ...slides];
 
     let itemsHtml = doubledSlides.map((slide) => `
-      <div class="cc-marquee-item flex-shrink-0 bg-white border border-gray-100 p-4 shadow-sm mx-3 relative group" style="width: ${cardWidth}px; border-radius: ${borderRadius}px; overflow: hidden; height: 380px;">
-        <a href="${slide.linkUrl || '#'}" class="block w-full h-full overflow-hidden bg-gray-50 relative" style="border-radius: ${borderRadius - 4}px;">
+      <div class="cc-marquee-item flex-shrink-0 bg-white border border-gray-100 p-4 shadow-sm mx-3 relative group" style="width: ${cardWidth}px; border-radius: ${borderRadius}px; overflow: hidden; height: ${marqueeHeight}px;">
+        <a href="${slide.linkUrl || '#'}" target="_top" class="block w-full h-full overflow-hidden bg-gray-50 relative" style="border-radius: ${borderRadius - 4}px;">
           ${slide.imageUrl ? `<img src="${slide.imageUrl}" alt="" class="w-full h-full object-cover transition-all duration-500" loading="lazy" />` : ""}
           <!-- Hover reveal overlay -->
           <div class="cc-marquee-overlay absolute inset-0 flex flex-col justify-end p-5 opacity-0 transition-opacity duration-300" 
@@ -744,7 +755,7 @@
              data-index="${index}">
           <!-- Full-bleed image -->
           <div class="relative w-full h-full bg-gray-100">
-            <a href="${slide.linkUrl || '#'}" class="cc-stacked-link block w-full h-full" style="pointer-events: ${index === 0 ? 'auto' : 'none'};">
+            <a href="${slide.linkUrl || '#'}" target="_top" class="cc-stacked-link block w-full h-full" style="pointer-events: ${index === 0 ? 'auto' : 'none'};">
               ${slide.imageUrl ? `<img src="${slide.imageUrl}" alt="" class="w-full h-full object-cover" loading="lazy" />` : `<div class="w-full h-full flex items-center justify-center text-gray-300">No Image</div>`}
             </a>
             
@@ -756,7 +767,7 @@
               <h3 class="text-white font-bold text-xl leading-snug mb-1" style="color: #ffffff !important; margin: 0 0 0.25rem 0;">${slide.title || 'Untitled'}</h3>
               <p class="text-white text-sm line-clamp-2" style="color: rgba(255,255,255,0.7) !important; margin: 0 0 1rem 0;">${slide.description || ''}</p>
               ${slide.buttonText ? `
-                <a href="${slide.linkUrl || '#'}" class="mt-3 inline-block bg-white text-gray-900 font-bold text-sm px-5 py-2 rounded-full hover:bg-gray-100 transition-all cc-btn" style="background-color: #ffffff; color: #111827 !important; border-radius: 9999px; width: fit-content; padding: 0.5rem 1.25rem;">
+                <a href="${slide.linkUrl || '#'}" target="_top" class="mt-3 inline-block bg-white text-gray-900 font-bold text-sm px-5 py-2 rounded-full hover:bg-gray-100 transition-all cc-btn" style="background-color: #ffffff; color: #111827 !important; border-radius: 9999px; width: fit-content; padding: 0.5rem 1.25rem;">
                   ${slide.buttonText}
                 </a>
               ` : ''}
@@ -784,6 +795,10 @@
     const textOrder = layoutSide === "right" ? "order-2" : "order-1";
     const imageOrder = layoutSide === "right" ? "order-1" : "order-2";
 
+    const containerHeight = layout.height ? parseInt(layout.height, 10) : 560;
+    const cardHeight = containerHeight - 120;
+    const cardWidth = cardHeight * 0.8;
+
     let slidesHtml = slides.map((slide, index) => {
       const btnClass = 
         buttonStyle === 'outline' ? 'border-2 border-gray-900 text-gray-900 bg-transparent hover:bg-gray-900 hover:text-white' : 
@@ -804,7 +819,7 @@
             </h2>
             <p class="text-gray-500 text-base md:text-lg leading-relaxed mb-6">${slide.description || ''}</p>
             ${slide.buttonText ? `
-              <a href="${slide.linkUrl || '#'}" class="cc-btn inline-block px-8 py-3.5 rounded-xl font-bold text-sm transition-all ${btnClass}" style="width: fit-content;">
+              <a href="${slide.linkUrl || '#'}" target="_top" class="cc-btn inline-block px-8 py-3.5 rounded-xl font-bold text-sm transition-all ${btnClass}" style="width: fit-content;">
                 ${slide.buttonText}
               </a>
             ` : ''}
@@ -821,8 +836,8 @@
             <div class="absolute -inset-8 rounded-full pointer-events-none opacity-30" 
                  style="background: radial-gradient(ellipse at center, rgba(139,92,246,0.15) 0%, rgba(59,130,246,0.10) 50%, transparent 75%); filter: blur(32px); z-index: 0;">
             </div>
-            <div class="cc-3d-tilt-card relative z-10 mx-auto" style="perspective: 1000px; max-width: 400px; width: 100%;">
-              <a href="${slide.linkUrl || '#'}" class="cc-3d-link block aspect-[4/5] w-full bg-gray-100 overflow-hidden shadow-xl" style="border-radius: ${borderRadius}px; transform-style: preserve-3d; transition: transform 0.1s ease-out; pointer-events: ${index === 0 ? 'auto' : 'none'};">
+            <div class="cc-3d-tilt-card relative z-10 mx-auto" style="perspective: 1000px; max-width: ${cardWidth}px; width: 100%;">
+              <a href="${slide.linkUrl || '#'}" target="_top" class="cc-3d-link block aspect-[4/5] w-full bg-gray-100 overflow-hidden shadow-xl" style="border-radius: ${borderRadius}px; transform-style: preserve-3d; transition: transform 0.1s ease-out; pointer-events: ${index === 0 ? 'auto' : 'none'};">
                 ${slide.imageUrl ? `<img src="${slide.imageUrl}" alt="" class="w-full h-full object-cover" draggable="false" />` : `<div class="w-full h-full flex items-center justify-center text-gray-300">No Image</div>`}
               </a>
             </div>
@@ -865,7 +880,7 @@
     slides.forEach((slide, index) => {
       const prevBtn = slide.querySelector(".cc-3d-prev");
       const nextBtn = slide.querySelector(".cc-3d-next");
-      const tiltCard = slide.querySelector(".cc-3d-tilt-card div");
+      const tiltCard = slide.querySelector(".cc-3d-tilt-card a");
 
       if (prevBtn) {
         prevBtn.addEventListener("click", (e) => {
@@ -1172,12 +1187,12 @@
              style="width: ${cardWidth}px; left: calc(50% - ${cardWidth / 2}px); top: ${topOffset}px; transform-style: preserve-3d; transition: transform 0.4s cubic-bezier(0.25, 0.8, 0.25, 1), opacity 0.4s ease, filter 0.4s ease;" 
              data-index="${index}">
           <div class="shadow-lg" style="border-radius: ${borderRadius}px; height: ${cardHeight}px; position: relative; overflow: hidden; background-color: #111827;">
-            <a href="${slide.linkUrl || '#'}" class="cc-coverflow-link block w-full h-full" style="pointer-events: ${index === 0 ? 'auto' : 'none'};">
-              ${slide.imageUrl ? `<img src="${slide.imageUrl}" alt="${slide.title || ''}" class="w-full h-full object-cover" style="width: 100%; height: 100%; object-fit: cover; display: block;" draggable="false" />` : `<div class="w-full h-full flex items-center justify-center text-gray-600 text-sm">No Image</div>`}
+            <a href="${slide.linkUrl || '#'}" target="${(typeof Shopify !== 'undefined' && Shopify.designMode) ? '_blank' : '_top'}" class="cc-coverflow-link block w-full h-full" style="pointer-events: ${index === 0 ? 'auto' : 'none'};">
+              ${slide.imageUrl ? `<img src="${slide.imageUrl}" alt="${slide.title || ''}" class="w-full h-full object-cover" style="width: 100%; height: 100%; object-fit: cover; display: block;" draggable="false" />` : `<div class="w-full h-full flex items-center justify-center text-gray-300">No Image</div>`}
             </a>
             <div class="cc-coverflow-info" style="position: absolute; left: 0; right: 0; bottom: 0; padding: 1.25rem; background: linear-gradient(to top, rgba(0,0,0,0.85) 0%, transparent 65%); z-index: 10; display: flex; flex-direction: column; justify-content: flex-end; opacity: ${index === 0 ? '1' : '0'}; pointer-events: ${index === 0 ? 'auto' : 'none'}; transition: opacity 0.3s ease;">
               <h3 class="text-white font-bold text-lg leading-tight mb-1" style="color: #ffffff; margin-bottom: 4px; font-weight: 700; font-size: 1.125rem;">${slide.title || 'Untitled'}</h3>
-              ${slide.buttonText ? `<a href="${slide.linkUrl || '#'}" class="mt-2 inline-block bg-white text-gray-900 text-xs font-bold px-4 py-2 rounded-lg hover:bg-gray-100 transition-colors w-fit cc-btn" style="background-color: #ffffff; color: #111827; display: inline-block; font-size: 0.75rem; font-weight: 700; padding: 0.5rem 1rem; border-radius: 0.5rem; text-decoration: none; width: fit-content; text-align: center;">${slide.buttonText}</a>` : ''}
+              ${slide.buttonText ? `<a href="${slide.linkUrl || '#'}" target="${(typeof Shopify !== 'undefined' && Shopify.designMode) ? '_blank' : '_top'}" class="mt-2 inline-block bg-white text-gray-900 text-xs font-bold px-4 py-2 rounded-lg hover:bg-gray-100 transition-colors w-fit cc-btn" style="background-color: #ffffff; color: #111827; display: inline-block; font-size: 0.75rem; font-weight: 700; padding: 0.5rem 1rem; border-radius: 0.5rem; text-decoration: none; width: fit-content; text-align: center;">${slide.buttonText}</a>` : ''}
             </div>
           </div>
           ${reflectionHtml}

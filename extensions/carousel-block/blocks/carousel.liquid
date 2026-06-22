@@ -79,13 +79,13 @@
     Loading Carousel...
   </div>
 </div>
+<script src="{{ 'carousel-craft.js' | asset_url }}" defer="defer"></script>
 
 {% schema %}
 {
   "name": "Carousel Showcase",
   "target": "section",
   "stylesheet": "carousel-craft.css",
-  "javascript": "carousel-craft.js",
   "settings": [
     {
       "type": "text",
@@ -150,7 +150,7 @@
       "max": 1000,
       "step": 50,
       "unit": "px",
-      "label": "Carousel Height (3D Templates)",
+      "label": "Carousel Height",
       "default": 550
     },
     {

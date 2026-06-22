@@ -90,7 +90,7 @@ export default function App() {
             </div>
             <h3 className={styles.featureTitle}>No Coding Required</h3>
             <p className={styles.featureText}>
-              Customize colors, card spacing, and autoplay options in real-time, then embed directly via standard Shopify App Blocks.
+              Customize colors, card spacing, and autoplay options in real-time, then embed directly via standard App Blocks.
             </p>
           </li>
         </ul>
